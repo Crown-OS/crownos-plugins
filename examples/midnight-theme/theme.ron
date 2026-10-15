@@ -1,0 +1,33 @@
+Theme(
+    id: "crown.example.midnight",
+    name: "Midnight",
+    version: "1.0.0",
+    description: "Deep blue glass with a floating bar and a large lock clock",
+    license: "MIT",
+    tokens: (
+        dark: {
+            "surface.bg": "#0b0d12",
+            "surface.raised": "#141824",
+            "surface.sunken": "#080a0e",
+            "text.primary": "#eef0f6",
+            "text.muted": "#8a93a8",
+            "frame.tint_top": "#1a2030e0",
+            "frame.tint_bottom": "#10141cc0",
+            "bar.fg": "#dfe6ff",
+        },
+        light: {
+            "surface.bg": "#f4f6fb",
+            "bar.fg": "#141824",
+        },
+        accent: (start: "#7aa2ff", end: "#4c6fff"),
+        radii: (sm: 6.0, md: 10.0, lg: 16.0, xl: 24.0),
+    ),
+    config: {
+        "appearance": {"dark_mode": true, "blur": true, "blur_passes": 4, "blur_size": 2.0, "border_radius": 12, "transparency": 0.15},
+        "bar": {"floating": true, "margin": 8, "radius": 14},
+    },
+    wallpaper: (dark: "wallpapers/night.svg", light: "wallpapers/day.svg"),
+    lock: (background: Image("wallpapers/night.svg"), clock_style: Large, dim: 0.35, blur: 0.8, transition: Zoom),
+    assets: (gtk: true, qt: true),
+    script: Some("theme.luau"),
+)

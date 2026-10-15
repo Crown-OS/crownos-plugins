@@ -1,0 +1,20 @@
+[package]
+name = "crownplugin"
+description = "Create, validate, pack and install CrownOS themes and plugins"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+clap = { version = "4", features = ["derive"] }
+crownos-ipc = { workspace = true }
+crownplugin-model = { workspace = true, features = ["archive"] }
+crownplugin-proto = { workspace = true }
+dirs = { workspace = true }
+mlua = { version = "0.11", features = ["luau"] }
+rustix = { version = "1", features = ["event"] }
+serde = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

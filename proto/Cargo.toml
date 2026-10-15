@@ -1,0 +1,16 @@
+[package]
+name = "crownplugin-proto"
+description = "The crownplugind IPC contract"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+crownos-config = { workspace = true }
+crownos-ipc = { workspace = true }
+crownplugin-model = { workspace = true }
+crownplugin-view = { workspace = true }
+serde = { workspace = true }
+
+[dev-dependencies]
+postcard = { version = "1", default-features = false, features = ["use-std"] }

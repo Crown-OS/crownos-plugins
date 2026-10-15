@@ -1,0 +1,19 @@
+[package]
+name = "crownplugin-render"
+description = "Renders crownplugin view trees with crownui; runs in the bar, Settings and the compositor's lock UI"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+blinc_icons = "0.5.1"
+crownos-config = { workspace = true }
+crownplugin-view = { workspace = true }
+geometry = { path = "../../crownui/geometry" }
+graphics = { path = "../../crownui/graphics" }
+reactive = { path = "../../crownui/reactive" }
+view = { path = "../../crownui/view" }
+widgets = { path = "../../crownui/widgets" }
+
+[dev-dependencies]
+crowntest = { path = "../../crownui/crowntest" }

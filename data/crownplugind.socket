@@ -1,0 +1,11 @@
+[Unit]
+Description=CrownOS themes and plugins (socket)
+PartOf=graphical-session.target
+
+[Socket]
+ListenStream=%t/crownos/crownplugind.sock
+SocketMode=0600
+DirectoryMode=0700
+
+[Install]
+WantedBy=sockets.target

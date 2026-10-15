@@ -1,0 +1,16 @@
+Plugin(
+    id: "crown.example.lock-agenda",
+    name: "Lock Screen Greeting",
+    version: "1.0.0",
+    description: "A greeting and battery line under the lock-screen clock",
+    license: "MIT",
+    capabilities: [Feed(Time), Feed(Power)],
+    contributes: (
+        lock: [(id: "greeting", slot: BelowClock)],
+        settings: (
+            title: "Lock Screen Greeting",
+            icon: "sun",
+            fields: [Text(key: "name", label: "Your name", default: "")],
+        ),
+    ),
+)

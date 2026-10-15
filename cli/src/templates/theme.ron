@@ -1,0 +1,23 @@
+Theme(
+    id: "{{id}}",
+    name: "{{name}}",
+    version: "0.1.0",
+    description: "",
+    license: "MIT",
+    tokens: (
+        dark: {
+            "surface.bg": "#101218",
+            "surface.raised": "#181b24",
+            "text.primary": "#eef0f6",
+        },
+        light: {},
+        accent: Some((start: "#8f6dfb", end: "#6d48e8")),
+        radii: Some((sm: 6.0, md: 10.0, lg: 16.0, xl: 24.0)),
+    ),
+    config: {
+        "appearance": {"dark_mode": true, "blur_passes": 4, "border_radius": 12},
+        "bar": {"floating": true, "margin": 8},
+    },
+    lock: Some((clock_style: Large, dim: 0.35)),
+    assets: (gtk: true, qt: true),
+)

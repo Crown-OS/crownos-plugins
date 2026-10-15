@@ -1,0 +1,20 @@
+Plugin(
+    id: "crown.example.cpu-graph",
+    name: "CPU Graph",
+    version: "0.1.0",
+    description: "",
+    license: "MIT",
+    entry: "main.luau",
+    capabilities: [Feed(System)],
+    contributes: (
+        bar: [(id: "status", slot: Right, after: Some("volume"))],
+        settings: (
+            title: "CPU Graph",
+            icon: "cpu",
+            fields: [
+                Slider(key: "interval", label: "Refresh every", min: 1.0, max: 10.0, step: 1.0, unit: "s", default: 2.0),
+                Toggle(key: "show_label", label: "Show percentage", default: true),
+            ],
+        ),
+    ),
+)

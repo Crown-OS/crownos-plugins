@@ -1,0 +1,12 @@
+Plugin(
+    id: "crown.example.now-playing",
+    name: "Now Playing",
+    version: "1.0.0",
+    description: "The current track in the bar, with playback controls in its panel",
+    license: "MIT",
+    capabilities: [Exec(programs: ["playerctl"])],
+    contributes: (
+        bar: [(id: "track", slot: Center)],
+        keybinds: [(keys: "Super+Shift+P", action: "play-pause")],
+    ),
+)

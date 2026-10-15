@@ -1,0 +1,10 @@
+[package]
+name = "crownplugin-sysassets"
+description = "Installs the system-wide files of a CrownOS theme; run through pkexec"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+crownplugin-model = { workspace = true }

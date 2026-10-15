@@ -1,0 +1,35 @@
+[package]
+name = "crownplugind"
+description = "Runs CrownOS themes and plugins"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+calloop = "0.13"
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
+crownos-config = { workspace = true }
+dirs = { workspace = true }
+crownos-ipc = { workspace = true, features = ["calloop"] }
+crownplugin-model = { workspace = true, features = ["archive"] }
+crownplugin-proto = { workspace = true }
+crownplugin-view = { workspace = true }
+lockscene = { path = "../../crownpositor/lockscene" }
+mlua = { version = "0.11", features = ["luau"] }
+notify = "8"
+calloop-wayland-source = "0.3"
+crownos-protocols = { path = "../../crownos-protocols", features = ["client"] }
+rustix = { version = "1", features = ["fs"] }
+sha2 = "0.10"
+wayland-client = "0.31"
+zbus = { version = "5", default-features = false, features = ["blocking-api", "async-io"] }
+ron = { workspace = true }
+serde = { workspace = true }
+thiserror = { workspace = true }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+ureq = { version = "3", default-features = false, features = ["rustls"] }
+
+[dev-dependencies]
+tempfile = { workspace = true }

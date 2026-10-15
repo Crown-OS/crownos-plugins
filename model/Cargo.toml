@@ -1,0 +1,22 @@
+[package]
+name = "crownplugin-model"
+description = "Manifests, capabilities and validation for CrownOS themes and plugins"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+crownos-config = { workspace = true }
+dirs = { workspace = true }
+ron = { workspace = true }
+serde = { workspace = true }
+thiserror = { workspace = true }
+flate2 = { version = "1", optional = true }
+tar = { version = "0.4", optional = true }
+
+[features]
+default = []
+archive = ["dep:flate2", "dep:tar"]
+
+[dev-dependencies]
+tempfile = { workspace = true }
