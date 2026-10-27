@@ -27,7 +27,18 @@ Theme(
         "bar": {"floating": true, "margin": 8, "radius": 14},
     },
     wallpaper: (dark: "wallpapers/night.svg", light: "wallpapers/day.svg"),
-    lock: (background: Image("wallpapers/night.svg"), clock_style: Large, dim: 0.35, blur: 0.8, transition: Zoom),
+    lock: (
+        background: Image("wallpapers/night.svg"),
+        clock_style: Large,
+        dim: 0.35,
+        blur: 0.8,
+        show_user: true,
+        transitions: (
+            appear: (effects: [Fade, Zoom(from: 0.9)], duration_ms: 480, easing: EaseOut),
+            reveal: (effects: [Fade, Blur(radius: 16.0), Slide(from: Bottom, distance: 48.0)], duration_ms: 340, easing: Spring),
+            dismiss: (effects: [Fade, Zoom(from: 0.94)], duration_ms: 360, easing: EaseIn),
+        ),
+    ),
     assets: (gtk: true, qt: true),
     script: Some("theme.luau"),
 )

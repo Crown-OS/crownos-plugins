@@ -1,9 +1,7 @@
 use std::collections::BTreeMap;
 
 use crownos_config::schema::theme::{AccentGradient, Font, Radii};
-use crownos_config::schema::{
-    ClockStyle, LockBackground, LockLayout, LockTransition, Placement,
-};
+use crownos_config::schema::{ClockStyle, LockBackground, LockLayout, LockTransitions, Placement};
 use serde::{Deserialize, Serialize};
 
 use super::{ConfigPatch, api_v1};
@@ -87,7 +85,8 @@ pub struct LockTheme {
     pub dim: Option<f32>,
     pub blur: Option<f32>,
     pub auth_field: Option<Placement>,
-    pub transition: Option<LockTransition>,
+    pub transitions: Option<LockTransitions>,
+    pub show_user: Option<bool>,
 }
 
 /// Package-relative directories.

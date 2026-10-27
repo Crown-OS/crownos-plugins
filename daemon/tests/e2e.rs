@@ -113,12 +113,14 @@ fn a_theme_applies_and_the_stock_look_comes_back() {
     let mut daemon = Daemon::start();
     let id = call!(daemon, install(example("midnight-theme"))).expect("installs");
     call!(daemon, set_theme(Some(id.clone()))).expect("activates");
-    assert!(daemon.config("appearance").contains("blur_passes: 4"));
+    assert!(daemon.config("appearance").contains("border_radius: 12"));
     assert!(daemon.config("theme").contains("#0b0d12"));
-    assert!(daemon.config("lock").contains("clock_style: Large"));
+    let lock = daemon.config("lock");
+    assert!(lock.contains("clock_style: Large"), "{lock}");
+    assert!(lock.contains("Spring"), "the theme's transitions are written: {lock}");
 
     call!(daemon, set_theme(None)).expect("deactivates");
-    assert!(daemon.config("appearance").contains("blur_passes: 3"));
+    assert!(daemon.config("appearance").contains("border_radius: 8"));
     assert!(!daemon.config("theme").contains("#0b0d12"));
     let listed = call!(daemon, list()).expect("lists");
     assert!(listed.iter().any(|entity| entity.id == id && !entity.active));

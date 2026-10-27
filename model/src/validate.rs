@@ -4,8 +4,9 @@
 use std::collections::BTreeSet;
 use std::fmt;
 
-use crownos_config::schema::LockBackground;
 use crownos_config::schema::theme::{is_color_token, parse_hex};
+use crownos_config::schema::{Effect, LockBackground, LockTransitions, Transition};
+use lockscene::Limits;
 
 use crate::manifest::ConfigPatch;
 use crate::{
@@ -168,10 +169,55 @@ fn check_theme(package: &Package, report: &mut Report, theme: &ThemeManifest) {
         if lock.dim.is_some_and(|dim| !(0.0..=1.0).contains(&dim)) {
             report.error("lock.dim", "must be between 0.0 and 1.0");
         }
+        if lock.blur.is_some_and(|blur| !(0.0..=1.0).contains(&blur)) {
+            report.error("lock.blur", "must be between 0.0 and 1.0");
+        }
+        if let Some(transitions) = &lock.transitions {
+            check_transitions(report, transitions);
+        }
         if lock.font.is_some() && assets.system.is_none() {
             report.warn(
                 "lock.font",
                 "the lock screen only sees system fonts; ship the font under `assets.system`",
+            );
+        }
+    }
+}
+
+fn check_transitions(report: &mut Report, transitions: &LockTransitions) {
+    for (moment, transition) in [
+        ("appear", &transitions.appear),
+        ("reveal", &transitions.reveal),
+        ("dismiss", &transitions.dismiss),
+    ] {
+        check_transition(report, &format!("lock.transitions.{moment}"), transition);
+    }
+}
+
+fn check_transition(report: &mut Report, at: &str, transition: &Transition) {
+    if transition.effects.len() > Limits::EFFECTS {
+        report.error(
+            format!("{at}.effects"),
+            format!("at most {} effects", Limits::EFFECTS),
+        );
+    }
+    if transition.duration_ms > Limits::DURATION_MS {
+        report.error(
+            format!("{at}.duration_ms"),
+            format!("must be at most {}", Limits::DURATION_MS),
+        );
+    }
+    for (index, effect) in transition.effects.iter().enumerate() {
+        let (value, range) = match *effect {
+            Effect::Fade => continue,
+            Effect::Blur { radius } => (radius, 0.0..=Limits::BLUR_RADIUS),
+            Effect::Slide { distance, .. } => (distance, 0.0..=Limits::SLIDE_DISTANCE),
+            Effect::Zoom { from } => (from, Limits::ZOOM),
+        };
+        if !range.contains(&value) {
+            report.error(
+                format!("{at}.effects[{index}]"),
+                format!("{value} is outside {}..={}", range.start(), range.end()),
             );
         }
     }

@@ -536,6 +536,7 @@ dependencies = [
  "crownos-config",
  "dirs",
  "flate2",
+ "lockscene",
  "ron",
  "serde",
  "tar",
@@ -582,6 +583,7 @@ dependencies = [
 name = "crownplugin-view"
 version = "0.1.0"
 dependencies = [
+ "blinc_icons",
  "crownos-config",
  "postcard",
  "serde",
@@ -1154,10 +1156,12 @@ dependencies = [
 name = "lockscene"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "crownos-config",
  "crownplugin-view",
  "postcard",
  "serde",
+ "sha2",
  "thiserror 2.0.21",
 ]
 

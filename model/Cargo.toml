@@ -8,6 +8,7 @@ license.workspace = true
 [dependencies]
 crownos-config = { workspace = true }
 dirs = { workspace = true }
+lockscene = { path = "../../crownpositor/lockscene" }
 ron = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }

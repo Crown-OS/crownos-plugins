@@ -48,7 +48,8 @@ declare ui: {
 	-- `selected` and the callback's index are 1-based.
 	select: (props: { options: { string }, selected: number?, on_change: ((index: number) -> ())? }) -> Node,
 	-- Only inside ui.lock_layout: "lock.clock", "lock.date", "lock.secure_field",
-	-- "lock.auth_prompt", "lock.user", "lock.power", "lock.caps", "lock.slot:<id>".
+	-- "lock.auth_prompt", "lock.user", "lock.power", "lock.caps", "lock.slot:plugin:<id>/<widget>".
+	-- "lock.power" is reserved and currently draws nothing.
 	placeholder: (name: string) -> Node,
 
 	-- Draw a widget declared in contributes.bar (pill + optional popup) or a
