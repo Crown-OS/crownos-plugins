@@ -10,7 +10,7 @@ use widgets::kit::{
 use widgets::{canvas, hstack, spacer, text, vstack, zstack};
 
 use crate::style::{BoxedProp, Palette, apply, text_size, text_token};
-use crate::{EventSink, Resolver, icons};
+use crate::{EventSink, Resolver};
 
 const ICON_SIZE: f32 = 16.0;
 const FALLBACK_ICON: &str = "circle-help";
@@ -104,8 +104,8 @@ impl<'a> Builder<'a> {
     }
 
     fn icon(&self, name: &str, style: &[Style]) -> AnyView {
-        let body = icons::lucide(name)
-            .or_else(|| icons::lucide(FALLBACK_ICON))
+        let body = crownplugin_view::lucide(name)
+            .or_else(|| crownplugin_view::lucide(FALLBACK_ICON))
             .unwrap_or_default();
         let size = text_size(style).unwrap_or(ICON_SIZE);
         let tint = match text_token(style) {
@@ -126,7 +126,7 @@ impl<'a> Builder<'a> {
 
     fn button(&self, id: NodeId, style: &[Style], label: &str, icon: Option<&str>, variant: ButtonVariant) -> AnyView {
         let send = self.sender();
-        let body = icon.and_then(icons::lucide);
+        let body = icon.and_then(crownplugin_view::lucide);
         let element = match (label.is_empty(), body) {
             (true, Some(body)) => kit::icon_button(body, icon.unwrap_or_default().to_owned()),
             (_, Some(body)) => kit::button(label.to_owned()).leading_icon(body),

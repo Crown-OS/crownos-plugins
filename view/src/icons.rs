@@ -1,5 +1,7 @@
 use crate::lucide::ICONS;
 
+pub use blinc_icons::to_svg;
+
 /// The SVG body of the Lucide icon `name` (e.g. `battery-charging`).
 pub fn lucide(name: &str) -> Option<&'static str> {
     ICONS

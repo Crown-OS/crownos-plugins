@@ -8,7 +8,7 @@ license.workspace = true
 [dependencies]
 blinc_icons = "0.5.1"
 crownos-config = { workspace = true }
-crownplugin-view = { workspace = true }
+crownplugin-view = { workspace = true, features = ["icons"] }
 geometry = { path = "../../crownui/geometry" }
 graphics = { path = "../../crownui/graphics" }
 reactive = { path = "../../crownui/reactive" }

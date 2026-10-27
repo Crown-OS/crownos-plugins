@@ -4,8 +4,6 @@
 //! paint outside the system palette. The crate depends on crownui's view and
 //! widget layers only, so the compositor can run it on its lock-UI thread.
 
-mod icons;
-mod lucide;
 mod nodes;
 mod style;
 
@@ -18,7 +16,7 @@ use graphics::ImageId;
 use reactive::Runtime;
 use view::{AnyView, Cx};
 
-pub use icons::lucide;
+pub use crownplugin_view::lucide;
 
 /// Delivers a user's action on an interactive node back to the host.
 pub type EventSink = Rc<dyn Fn(UiEvent)>;

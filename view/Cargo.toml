@@ -5,7 +5,12 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 
+[features]
+# The Lucide icon bodies, for hosts that draw `Icon` nodes.
+icons = ["dep:blinc_icons"]
+
 [dependencies]
+blinc_icons = { version = "0.5.1", optional = true }
 crownos-config = { workspace = true }
 serde = { workspace = true }
 thiserror = { workspace = true }

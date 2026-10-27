@@ -4,11 +4,17 @@
 
 pub mod class;
 mod event;
+#[cfg(feature = "icons")]
+mod icons;
+#[cfg(feature = "icons")]
+mod lucide;
 mod node;
 mod style;
 
 pub use class::{ClassError, parse_class};
 pub use event::{NodeId, UiEvent};
+#[cfg(feature = "icons")]
+pub use icons::{lucide, to_svg};
 pub use node::{ButtonVariant, Node, Tone, Tree};
 pub use style::{Align, Justify, Length, Radius, Style, TextSize, Token, Weight};
 
