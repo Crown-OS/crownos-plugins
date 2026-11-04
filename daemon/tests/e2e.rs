@@ -140,3 +140,36 @@ fn an_invalid_package_is_refused_with_its_errors() {
         .expect_err("refused");
     assert!(error.to_string().contains("config.plugins.enabled"), "{error}");
 }
+
+#[test]
+fn launcher_tiles_and_search_answers_reach_the_launcher() {
+    let mut daemon = Daemon::start();
+    let id = call!(daemon, install(example("launcher-tools"))).expect("installs");
+    call!(daemon, set_enabled(id.clone(), true)).expect("enables");
+    eventually(|| {
+        let snapshot = call!(daemon, attach_launcher()).expect("attaches");
+        snapshot.tiles.iter().any(|tile| tile.plugin == id && tile.widget == "system")
+    });
+
+    daemon
+        .client
+        .subscribe_blocking::<plugind::SearchAnswered>(TIMEOUT)
+        .expect("subscribes");
+    daemon.client.search("2 * (3 + 4)".into()).expect("sent");
+    let mut answered = None;
+    eventually(|| {
+        let _ = call!(daemon, list());
+        while let Some(event) = daemon.client.next_event() {
+            if let plugind::Event::SearchAnswered(event) = event {
+                answered = Some(event.results);
+            }
+        }
+        answered.is_some()
+    });
+    let results = answered.expect("answered");
+    assert_eq!((results.provider.as_str(), results.query.as_str()), ("calc", "2 * (3 + 4)"));
+    assert_eq!(results.hits.first().map(|hit| hit.id.as_str()), Some("14"));
+
+    call!(daemon, set_enabled(id, false)).expect("disables");
+    assert!(call!(daemon, attach_launcher()).expect("attaches").tiles.is_empty());
+}

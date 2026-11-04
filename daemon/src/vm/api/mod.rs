@@ -3,6 +3,7 @@
 
 mod core;
 mod desktop;
+mod launcher;
 mod system;
 mod ui;
 
@@ -64,6 +65,7 @@ pub(super) fn namespace(lua: &Lua, name: &str) -> mlua::Result<Table> {
 pub fn install(lua: &Lua, package: &Package, grants: &Grants) -> mlua::Result<()> {
     core::install(lua, package)?;
     ui::install(lua)?;
+    launcher::install(lua)?;
     system::install(lua, grants)?;
     desktop::install(lua, grants)?;
     Ok(())

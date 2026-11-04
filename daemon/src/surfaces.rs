@@ -2,8 +2,8 @@
 
 use std::collections::BTreeMap;
 
-use crownplugin_model::LockSlotPosition;
-use crownplugin_proto::{Part, RemoteSurface, Snapshot};
+use crownplugin_model::{LauncherSize, LockSlotPosition};
+use crownplugin_proto::{LauncherSnapshot, LauncherSurface, Part, RemoteSurface, Snapshot};
 use crownplugin_view::{MAX_TREE_BYTES, Node, Tree};
 
 #[derive(Debug, Default)]
@@ -17,6 +17,7 @@ struct Surface {
 pub struct Surfaces {
     bar: BTreeMap<(String, String), Surface>,
     lock: BTreeMap<(String, String), Surface>,
+    launcher: BTreeMap<(String, String), (LauncherSize, Option<Tree>)>,
     lock_layout: Option<Tree>,
     revision: u64,
 }
@@ -58,12 +59,7 @@ impl Surfaces {
         node: Option<Node>,
         lock: Option<LockSlotPosition>,
     ) -> Result<Changed, String> {
-        if let Some(node) = &node {
-            let size = postcard_len(node);
-            if size > MAX_TREE_BYTES {
-                return Err(format!("`{widget}` renders {size} bytes; the limit is {MAX_TREE_BYTES}"));
-            }
-        }
+        check_size(widget, node.as_ref())?;
         let key = (plugin.to_owned(), widget.to_owned());
         let (map, changed) = match lock {
             Some(_) => (&mut self.lock, Changed::Lock),
@@ -80,6 +76,57 @@ impl Surfaces {
         }
         self.revision += 1;
         Ok(changed)
+    }
+
+    /// Store a launcher tile's tree; returns whether hosts must hear about it.
+    pub fn render_tile(
+        &mut self,
+        plugin: &str,
+        widget: &str,
+        size: LauncherSize,
+        node: Option<Node>,
+    ) -> Result<bool, String> {
+        check_size(widget, node.as_ref())?;
+        let (stored_size, slot) = self
+            .launcher
+            .entry((plugin.to_owned(), widget.to_owned()))
+            .or_insert((size, None));
+        let resized = *stored_size != size;
+        *stored_size = size;
+        let changed = put(slot, node) || resized;
+        if changed {
+            self.revision += 1;
+        }
+        Ok(changed)
+    }
+
+    pub fn launcher(&self) -> LauncherSnapshot {
+        LauncherSnapshot {
+            revision: self.revision,
+            tiles: self
+                .launcher
+                .iter()
+                .filter_map(|((plugin, widget), (size, tree))| {
+                    Some(LauncherSurface {
+                        plugin: plugin.clone(),
+                        widget: widget.clone(),
+                        size: *size,
+                        tree: tree.clone()?,
+                    })
+                })
+                .collect(),
+        }
+    }
+
+    /// Forget every launcher tile of `plugin`; returns whether any was drawn.
+    pub fn remove_tiles(&mut self, plugin: &str) -> bool {
+        let before = self.launcher.len();
+        self.launcher.retain(|(owner, _), _| owner != plugin);
+        let changed = self.launcher.len() != before;
+        if changed {
+            self.revision += 1;
+        }
+        changed
     }
 
     pub fn set_lock_layout(&mut self, node: Option<Node>) -> bool {
@@ -108,6 +155,9 @@ impl Surfaces {
 
     pub fn current_rev(&self, plugin: &str, widget: &str, part: Part) -> Option<u32> {
         let key = (plugin.to_owned(), widget.to_owned());
+        if let Some((_, tile)) = self.launcher.get(&key) {
+            return (part == Part::Main).then_some(tile.as_ref()?.rev);
+        }
         let surface = self.bar.get(&key).or_else(|| self.lock.get(&key))?;
         match part {
             Part::Main => surface.main.as_ref(),
@@ -141,6 +191,14 @@ impl Surfaces {
     }
 }
 
+fn check_size(widget: &str, node: Option<&Node>) -> Result<(), String> {
+    let size = node.map_or(0, postcard_len);
+    if size > MAX_TREE_BYTES {
+        return Err(format!("`{widget}` renders {size} bytes; the limit is {MAX_TREE_BYTES}"));
+    }
+    Ok(())
+}
+
 fn postcard_len(node: &Node) -> usize {
     crownos_ipc::postcard::to_stdvec(node).map_or(usize::MAX, |bytes| bytes.len())
 }
@@ -172,5 +230,21 @@ mod tests {
             .expect("fits");
         assert_eq!(surfaces.remove("p"), (true, true));
         assert!(surfaces.bar().surfaces.is_empty() && surfaces.lock().surfaces.is_empty());
+    }
+
+    #[test]
+    fn launcher_tiles_are_versioned_and_cleared_with_their_plugin() {
+        let mut surfaces = Surfaces::default();
+        assert_eq!(surfaces.render_tile("p", "t", LauncherSize::Wide, Some(text("a"))), Ok(true));
+        assert_eq!(surfaces.render_tile("p", "t", LauncherSize::Wide, Some(text("a"))), Ok(false));
+        assert_eq!(surfaces.render_tile("p", "t", LauncherSize::Small, Some(text("a"))), Ok(true));
+        assert_eq!(surfaces.current_rev("p", "t", Part::Main), Some(1));
+        assert_eq!(surfaces.current_rev("p", "t", Part::Popup), None);
+        let snapshot = surfaces.launcher();
+        assert_eq!(snapshot.tiles.len(), 1);
+        assert_eq!(snapshot.tiles[0].size, LauncherSize::Small);
+        assert!(surfaces.bar().surfaces.is_empty(), "tiles are not bar pills");
+        assert!(surfaces.remove_tiles("p"));
+        assert!(surfaces.launcher().tiles.is_empty());
     }
 }

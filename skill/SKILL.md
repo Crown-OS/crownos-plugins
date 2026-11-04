@@ -106,6 +106,8 @@ Plugin(
     contributes: (
         bar: [(id: "graph", slot: Right, after: Some("volume"))],
         lock: [(id: "load", slot: BelowClock)],
+        launcher: [(id: "load-tile", size: Small)],
+        search: [(id: "procs", name: "Processes", keyword: Some("ps"))],
         settings: (title: "CPU Graph", icon: "cpu", fields: [
             Slider(key: "interval", label: "Refresh every", min: 1.0, max: 10.0, step: 1.0, unit: "s", default: 2.0),
             Toggle(key: "label", label: "Show percentage", default: true),
@@ -128,6 +130,14 @@ Plugin(
 - **`lock` slots:**
   - positions are `Clock` (replaces the clock), `AboveClock`, `BelowClock` and `Bottom`;
   - they are display-only, so buttons are stripped.
+- **`launcher` tiles:**
+  - sit on the launcher's home grid on glass the launcher draws, so the tree is only the content;
+  - `size` is `Small` (one column, short row), `Wide` (two columns, short), `Square` (one column, tall) or `Large` (two columns, tall);
+  - `launcher.ron` lists them as `plugin:<id>/<tile>`; the launcher places new ones itself.
+- **`search` providers:**
+  - `on_search(provider, query)` is called as the user types; answer with `launcher.results(provider, query, hits)`, at once or from an async callback;
+  - with `keyword: Some("ps")` only queries like `ps firefox` arrive, as `firefox`;
+  - `on_activate(provider, id)` runs when the user picks a hit; the launcher closes itself.
 - **`settings`** appear as the plugin's own page in Settings; values are read with `settings.get`.
 - **`keybinds`** call `actions.<action>` in the module the script returns. A chord the user already uses is skipped.
 
@@ -172,7 +182,7 @@ return {
 }
 ```
 
-- **`ui.render(id, pill, popup?)`** draws a bar widget (pill plus optional popup panel) or a lock slot. Re-rendering an identical tree costs nothing, so redraw from timers freely.
+- **`ui.render(id, pill, popup?)`** draws a bar widget (pill plus optional popup panel), a lock slot or a launcher tile. Re-rendering an identical tree costs nothing, so redraw from timers freely.
 - **Nodes:** `vstack`, `hstack`, `zstack`, `card`, `text`, `icon` (Lucide names), `image` (package path), `spacer`, `divider`, `badge`, `progress`, `button`, `toggle`, `slider`, `select`.
 - **Classes:**
   - spacing (`p-2`=8px, `px-[10]`, `gap-1`), size (`w-full`, `h-8`, `w-[200]`, `min-w-…`, `max-w-…`), `rounded-sm|md|lg|xl|full`;
@@ -190,5 +200,5 @@ return {
 - Each status maps to a cause:
   - **Error at enable:** usually a config value of the wrong type. Re-run validate.
   - **Quarantined:** the script failed three times. Read the log, fix it, and save; dev mode reloads it.
-  - **Widget missing:** the id passed to `ui.render` must be declared in `contributes.bar`, and the bar lists it as `plugin:<id>/<widget>`.
+  - **Widget missing:** the id passed to `ui.render` must be declared in `contributes.bar` (or `lock`, `launcher`), and the bar lists it as `plugin:<id>/<widget>`.
 - `crownplugin grant <id> <capability> allow|deny|ask` changes a decision. `crownplugin set <id> <key> <value>` changes a setting.

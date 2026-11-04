@@ -148,6 +148,28 @@ impl Vm {
         }
     }
 
+    /// Ask `provider` about `query`; it answers with `launcher.results`.
+    pub fn search(&mut self, provider: &str, query: &str) -> Outcome {
+        match self.module_function(&["on_search"]) {
+            Some(function) => self.call(&function, (provider.to_owned(), query.to_owned())),
+            None => Outcome::Ok,
+        }
+    }
+
+    pub fn activate(&mut self, provider: &str, id: &str) -> Outcome {
+        match self.module_function(&["on_activate"]) {
+            Some(function) => self.call(&function, (provider.to_owned(), id.to_owned())),
+            None => Outcome::Ok,
+        }
+    }
+
+    pub fn launcher_shown(&mut self, shown: bool) -> Outcome {
+        match self.module_function(&["on_launcher"]) {
+            Some(function) => self.call(&function, shown),
+            None => Outcome::Ok,
+        }
+    }
+
     pub fn unload(&mut self) {
         if let Some(function) = self.module_function(&["on_unload"]) {
             let _ = self.call(&function, ());

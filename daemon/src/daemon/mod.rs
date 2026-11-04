@@ -45,7 +45,10 @@ pub struct Parked {
 pub struct Outbox {
     pub bar: bool,
     pub lock: bool,
+    pub launcher: bool,
     pub entities: bool,
+    /// Search answers, sent as soon as the loop is idle rather than batched.
+    pub answers: Vec<crownplugin_proto::SearchResults>,
     pub logs: Vec<LogLine>,
     pub scheduled: bool,
 }
@@ -66,6 +69,8 @@ pub struct Daemon {
     pub watches: Watches,
     pub entities_revision: u64,
     pub dark_mode: bool,
+    /// The launcher's latest query; answers to any other are stale.
+    pub search_query: String,
 }
 
 impl Daemon {
@@ -88,6 +93,7 @@ impl Daemon {
             compositor: None,
             entities_revision: 0,
             dark_mode: crownos_config::load::<crownos_config::Appearance>("appearance").dark_mode,
+            search_query: String::new(),
         }
     }
 }

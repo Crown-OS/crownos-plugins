@@ -240,6 +240,31 @@ fn check_plugin(report: &mut Report, plugin: &PluginManifest) {
             report.error(format!("contributes.lock[{index}].id"), "must be unique, a-z, 0-9 and '-'");
         }
     }
+    for (index, widget) in contributes.launcher.iter().enumerate() {
+        let at = format!("contributes.launcher[{index}].id");
+        if !is_plain_id(&widget.id) {
+            report.error(&at, "use a-z, 0-9 and '-'");
+        } else if !widget_ids.insert(widget.id.as_str()) || slot_ids.contains(widget.id.as_str()) {
+            report.error(&at, "a widget, slot or tile with this id already exists");
+        }
+    }
+    let mut provider_ids = BTreeSet::new();
+    for (index, provider) in contributes.search.iter().enumerate() {
+        let at = format!("contributes.search[{index}]");
+        if !is_plain_id(&provider.id) || !provider_ids.insert(provider.id.as_str()) {
+            report.error(format!("{at}.id"), "must be unique, a-z, 0-9 and '-'");
+        }
+        if provider.name.trim().is_empty() {
+            report.error(format!("{at}.name"), "must not be empty");
+        }
+        if provider
+            .keyword
+            .as_deref()
+            .is_some_and(|keyword| keyword.is_empty() || keyword.contains(char::is_whitespace))
+        {
+            report.error(format!("{at}.keyword"), "must be one word");
+        }
+    }
     for (index, keybind) in contributes.keybinds.iter().enumerate() {
         if keybind.keys.trim().is_empty() {
             report.error(format!("contributes.keybinds[{index}].keys"), "must not be empty");

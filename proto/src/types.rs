@@ -1,5 +1,5 @@
 use crownos_config::schema::Decision;
-use crownplugin_model::{Kind, Level, LockSlotPosition, SettingsSection};
+use crownplugin_model::{Kind, LauncherSize, Level, LockSlotPosition, SettingsSection};
 use crownplugin_view::Tree;
 use serde::{Deserialize, Serialize};
 
@@ -58,6 +58,67 @@ impl RemoteSurface {
 pub struct Snapshot {
     pub revision: u64,
     pub surfaces: Vec<RemoteSurface>,
+}
+
+/// One plugin tile on the launcher's home grid.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct LauncherSurface {
+    pub plugin: String,
+    pub widget: String,
+    pub size: LauncherSize,
+    pub tree: Tree,
+}
+
+impl LauncherSurface {
+    pub fn key(&self) -> SurfaceKey {
+        SurfaceKey {
+            plugin: self.plugin.clone(),
+            widget: self.widget.clone(),
+            part: Part::Main,
+        }
+    }
+
+    /// The entry this tile is listed under in `launcher.ron`.
+    pub fn entry(&self) -> String {
+        format!("plugin:{}/{}", self.plugin, self.widget)
+    }
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct LauncherSnapshot {
+    pub revision: u64,
+    pub tiles: Vec<LauncherSurface>,
+}
+
+/// One result a search provider offers.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SearchHit {
+    /// Handed back to the plugin's `on_activate` when the user picks it.
+    pub id: String,
+    pub title: String,
+    pub subtitle: String,
+    /// A Lucide icon name.
+    pub icon: Option<String>,
+}
+
+/// What one provider answered for one query.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SearchResults {
+    pub plugin: String,
+    pub provider: String,
+    /// The heading the hits are grouped under.
+    pub name: String,
+    /// The query as the launcher sent it, keyword included.
+    pub query: String,
+    pub hits: Vec<SearchHit>,
+}
+
+/// Names one hit for `activate`.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct HitKey {
+    pub plugin: String,
+    pub provider: String,
+    pub id: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

@@ -1,0 +1,16 @@
+Plugin(
+    id: "crown.example.launcher-tools",
+    name: "Launcher Tools",
+    version: "0.1.0",
+    description: "A calculator and web search in the launcher, and a system tile on its home grid",
+    license: "MIT",
+    entry: "main.luau",
+    capabilities: [Feed(System), Exec(programs: ["xdg-open"])],
+    contributes: (
+        launcher: [(id: "system", size: Small)],
+        search: [
+            (id: "calc", name: "Calculator"),
+            (id: "web", name: "Web", keyword: Some("g")),
+        ],
+    ),
+)
