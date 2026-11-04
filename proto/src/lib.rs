@@ -8,12 +8,13 @@
 mod types;
 
 pub use types::{
-    CapabilityInfo, EntityInfo, EntityStatus, Host, LogLevel, LogLine, Part, RemoteSurface,
-    Snapshot, Source, SurfaceKey,
+    CapabilityInfo, EntityInfo, EntityStatus, HitKey, Host, LauncherSnapshot, LauncherSurface,
+    LogLevel, LogLine, Part, RemoteSurface, SearchHit, SearchResults, Snapshot, Source,
+    SurfaceKey,
 };
 
 pub use crownplugin_model::settings::{SettingValue, SettingsSection};
-pub use crownplugin_model::{Kind, Level, LockSlotPosition};
+pub use crownplugin_model::{Kind, LauncherSize, Level, LockSlotPosition};
 pub use crownos_config::schema::Decision;
 pub use crownplugin_view::{Node, NodeId, Tree, UiEvent};
 
@@ -25,6 +26,16 @@ crownos_ipc::protocol! {
         notify ui_event(surface: SurfaceKey, rev: u32, event: UiEvent);
         /// A plugin's bar popup opened or closed.
         notify popup(surface: SurfaceKey, open: bool);
+
+        /// Every tile plugins draw on the launcher's home grid.
+        fn attach_launcher() -> LauncherSnapshot;
+        /// The launcher opened or closed; plugins refresh their tiles on open.
+        notify launcher_shown(shown: bool);
+        /// Ask every search provider about `query`; answers arrive as
+        /// `SearchAnswered`, possibly long after, and only for this query.
+        notify search(query: String);
+        /// The user picked a provider's hit.
+        notify activate(hit: HitKey);
 
         fn list() -> Vec<EntityInfo>;
         /// Install from a folder, a `.crownpkg` file or a git URL; returns the id.
@@ -44,6 +55,8 @@ crownos_ipc::protocol! {
 
         event BarChanged { snapshot: Snapshot };
         event LockChanged { snapshot: Snapshot };
+        event LauncherChanged { snapshot: LauncherSnapshot };
+        event SearchAnswered { results: SearchResults };
         event EntitiesChanged { revision: u64 };
         event Logged { line: LogLine };
     }

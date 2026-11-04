@@ -17,9 +17,9 @@ pub use config_access::{ConfigAccess, config_access};
 pub use error::ModelError;
 pub use id::EntityId;
 pub use manifest::{
-    BarSlot, BarWidgetDecl, ConfigPatch, Contributes, KeybindDecl, Kind, Limits, LockSlotDecl,
-    LockSlotPosition, LockTheme, Manifest, PluginManifest, RonText, ThemeAssets, ThemeManifest,
-    Tokens, Wallpaper,
+    BarSlot, BarWidgetDecl, ConfigPatch, Contributes, KeybindDecl, Kind, LauncherSize,
+    LauncherWidgetDecl, Limits, LockSlotDecl, LockSlotPosition, LockTheme, Manifest,
+    PluginManifest, RonText, SearchProviderDecl, ThemeAssets, ThemeManifest, Tokens, Wallpaper,
 };
 pub use package::Package;
 pub use settings::{Field, SelectOption, SettingValue, SettingsSection};

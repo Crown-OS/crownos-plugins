@@ -5,7 +5,8 @@ use crownos_ipc::RemoteError;
 use crownplugin_model::{Manifest, SettingValue};
 use crownplugin_proto::plugind::Handler;
 use crownplugin_proto::{
-    CapabilityInfo, EntityInfo, Host, Kind, LogLine, Part, Snapshot, Source, SurfaceKey, UiEvent,
+    CapabilityInfo, EntityInfo, HitKey, Host, Kind, LauncherSnapshot, LogLine, Part, Snapshot, Source, SurfaceKey,
+    UiEvent,
 };
 
 use super::{Daemon, Message};
@@ -88,6 +89,52 @@ impl Handler for Daemon {
         if let Some(running) = self.running.get_mut(&surface.plugin) {
             let outcome = running.vm.popup(&surface.widget, open);
             self.after_call(&surface.plugin, outcome);
+        }
+    }
+
+    fn attach_launcher(&mut self) -> Result<LauncherSnapshot, RemoteError> {
+        Ok(self.surfaces.launcher())
+    }
+
+    fn launcher_shown(&mut self, shown: bool) {
+        let ids: Vec<String> = self.running.keys().cloned().collect();
+        for id in ids {
+            if let Some(running) = self.running.get_mut(&id) {
+                let outcome = running.vm.launcher_shown(shown);
+                self.after_call(&id, outcome);
+            }
+        }
+    }
+
+    fn search(&mut self, query: String) {
+        self.search_query = query;
+        let asked: Vec<(String, String, String)> = self
+            .registry
+            .iter()
+            .filter(|entry| self.running.contains_key(entry.package.manifest.id().as_str()))
+            .filter_map(|entry| match &entry.package.manifest {
+                Manifest::Plugin(plugin) => Some(plugin),
+                Manifest::Theme(_) => None,
+            })
+            .flat_map(|plugin| {
+                plugin.contributes.search.iter().filter_map(|provider| {
+                    let asked = provider.accepts(&self.search_query)?;
+                    (!asked.is_empty()).then(|| (plugin.id.to_string(), provider.id.clone(), asked.to_owned()))
+                })
+            })
+            .collect();
+        for (id, provider, query) in asked {
+            if let Some(running) = self.running.get_mut(&id) {
+                let outcome = running.vm.search(&provider, &query);
+                self.after_call(&id, outcome);
+            }
+        }
+    }
+
+    fn activate(&mut self, hit: HitKey) {
+        if let Some(running) = self.running.get_mut(&hit.plugin) {
+            let outcome = running.vm.activate(&hit.provider, &hit.id);
+            self.after_call(&hit.plugin, outcome);
         }
     }
 

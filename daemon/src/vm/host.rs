@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 use crownplugin_model::{LockSlotPosition, Manifest, Package, SettingValue, UserDir};
-use crownplugin_proto::{LogLevel, Part};
+use crownplugin_proto::{LogLevel, Part, SearchHit};
 use crownplugin_view::Node;
 use mlua::Function;
 
@@ -24,6 +24,17 @@ pub enum Command {
         tree: Option<Node>,
     },
     LockDecoration(Option<Node>),
+    /// A launcher tile's tree.
+    RenderTile {
+        widget: String,
+        tree: Option<Node>,
+    },
+    /// A search provider's hits for `query`.
+    Answer {
+        provider: String,
+        query: String,
+        hits: Vec<SearchHit>,
+    },
     Timer {
         id: u32,
         every: Duration,
@@ -89,6 +100,8 @@ pub struct Host {
     next_id: u32,
     pub bar_widgets: Vec<String>,
     pub lock_slots: Vec<(String, LockSlotPosition)>,
+    pub launcher_tiles: Vec<String>,
+    pub search_providers: Vec<String>,
     pub dark_mode: bool,
     pub tokens: BTreeMap<String, String>,
     pub settings: BTreeMap<String, SettingValue>,
@@ -98,17 +111,17 @@ pub struct Host {
 
 impl Host {
     pub fn new(package: &Package, is_theme: bool) -> Self {
-        let (bar_widgets, lock_slots) = match &package.manifest {
-            Manifest::Plugin(plugin) => (
-                plugin.contributes.bar.iter().map(|widget| widget.id.clone()).collect(),
-                plugin
-                    .contributes
-                    .lock
-                    .iter()
-                    .map(|slot| (slot.id.clone(), slot.slot))
-                    .collect(),
-            ),
-            Manifest::Theme(_) => (Vec::new(), Vec::new()),
+        let (bar_widgets, lock_slots, launcher_tiles, search_providers) = match &package.manifest {
+            Manifest::Plugin(plugin) => {
+                let contributes = &plugin.contributes;
+                (
+                    contributes.bar.iter().map(|widget| widget.id.clone()).collect(),
+                    contributes.lock.iter().map(|slot| (slot.id.clone(), slot.slot)).collect(),
+                    contributes.launcher.iter().map(|tile| tile.id.clone()).collect(),
+                    contributes.search.iter().map(|provider| provider.id.clone()).collect(),
+                )
+            }
+            Manifest::Theme(_) => (Vec::new(), Vec::new(), Vec::new(), Vec::new()),
         };
         Self {
             dir: package.dir.clone(),
@@ -121,6 +134,8 @@ impl Host {
             next_id: 1,
             bar_widgets,
             lock_slots,
+            launcher_tiles,
+            search_providers,
             dark_mode: true,
             tokens: BTreeMap::new(),
             settings: BTreeMap::new(),

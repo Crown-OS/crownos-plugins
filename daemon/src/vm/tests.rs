@@ -163,3 +163,59 @@ fn every_global_is_declared_in_the_type_definitions() {
         }
     }
 }
+
+fn launcher_vm(script: &str) -> (tempfile::TempDir, Vm, Outcome) {
+    let dir = tempfile::tempdir().expect("tempdir");
+    std::fs::write(
+        dir.path().join("plugin.ron"),
+        r#"Plugin(id: "dev.test.finder", name: "Finder", version: "1.0.0",
+            contributes: (launcher: [(id: "tile", size: Wide)], search: [(id: "calc", name: "Calculator")]))"#,
+    )
+    .expect("manifest");
+    std::fs::write(dir.path().join("main.luau"), script).expect("script");
+    let package = Package::load(dir.path()).expect("loads");
+    let grants = Grants { declared: package.manifest.capabilities(), denied: Default::default() };
+    let (vm, outcome) = Vm::start(&package, &grants, Seed::default()).expect("vm starts");
+    (dir, vm, outcome)
+}
+
+#[test]
+fn a_launcher_tile_renders_and_a_provider_answers_its_query() {
+    let script = r#"
+        ui.render("tile", ui.text("hello"))
+        return {
+            on_search = function(provider, query)
+                launcher.results(provider, query, { { title = "4", subtitle = query, icon = "calculator" } })
+            end,
+            on_activate = function(provider, id) log.info(provider .. ":" .. id) end,
+        }
+    "#;
+    let (_dir, mut vm, outcome) = launcher_vm(script);
+    assert!(matches!(outcome, Outcome::Ok), "{outcome:?}");
+    assert!(matches!(
+        vm.take_commands().as_slice(),
+        [Command::RenderTile { widget, tree: Some(_) }] if widget == "tile"
+    ));
+
+    assert!(matches!(vm.search("calc", "2+2"), Outcome::Ok));
+    let commands = vm.take_commands();
+    let [Command::Answer { provider, query, hits }] = commands.as_slice() else {
+        panic!("expected one answer, got {commands:?}");
+    };
+    assert_eq!((provider.as_str(), query.as_str()), ("calc", "2+2"));
+    assert_eq!(hits.len(), 1);
+    assert_eq!((hits[0].id.as_str(), hits[0].icon.as_deref()), ("4", Some("calculator")));
+
+    assert!(matches!(vm.activate("calc", "4"), Outcome::Ok));
+    assert!(matches!(
+        vm.take_commands().as_slice(),
+        [Command::Log(_, message)] if message == "calc:4"
+    ));
+}
+
+#[test]
+fn answering_for_an_undeclared_provider_fails() {
+    let script = r#"return { on_search = function() launcher.results("web", "x", {}) end }"#;
+    let (_dir, mut vm, _) = launcher_vm(script);
+    assert!(matches!(vm.search("calc", "x"), Outcome::Failed(message) if message.contains("contributes.search")));
+}

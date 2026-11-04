@@ -52,8 +52,9 @@ declare ui: {
 	-- "lock.power" is reserved and currently draws nothing.
 	placeholder: (name: string) -> Node,
 
-	-- Draw a widget declared in contributes.bar (pill + optional popup) or a
-	-- slot declared in contributes.lock (main only; inputs are stripped).
+	-- Draw a widget declared in contributes.bar (pill + optional popup), a
+	-- slot declared in contributes.lock (main only; inputs are stripped) or a
+	-- tile declared in contributes.launcher (main only, drawn on glass).
 	-- Identical trees are not re-sent, so calling this every tick is cheap.
 	render: (widget: string, main: Node?, popup: Node?) -> (),
 	-- Themes only: the whole lock-screen layout, built around placeholders.
@@ -159,9 +160,28 @@ declare notify: {
 	send: (options: { summary: string, body: string? }) -> (),
 }?
 
+export type SearchHit = {
+	-- Handed back to on_activate; defaults to the title.
+	id: string?,
+	title: string,
+	subtitle: string?,
+	-- A Lucide icon name.
+	icon: string?,
+}
+
+-- Answer a query on_search received, now or later (after http, exec...).
+-- `query` must be the one on_search was given; answers to an older query are
+-- dropped. At most 20 hits are shown per provider.
+declare launcher: {
+	results: (provider: string, query: string, hits: { SearchHit }) -> (),
+}
+
 -- A script may return a module table:
 -- return {
 --   actions = { [name] = function() end },          -- contributes.keybinds actions
 --   on_popup = function(widget: string, open: boolean) end,
+--   on_launcher = function(shown: boolean) end,     -- the launcher opened or closed
+--   on_search = function(provider: string, query: string) end, -- contributes.search; keyword stripped
+--   on_activate = function(provider: string, id: string) end,  -- the user picked a hit
 --   on_unload = function() end,
 -- }

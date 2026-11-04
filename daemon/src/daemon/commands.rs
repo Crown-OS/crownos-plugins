@@ -96,6 +96,8 @@ impl Daemon {
     pub fn run_command(&mut self, id: &str, command: Command) {
         match command {
             Command::Render { widget, part, tree } => self.render(id, &widget, part, tree),
+            Command::RenderTile { widget, tree } => self.render_tile(id, &widget, tree),
+            Command::Answer { provider, query, hits } => self.answer(id, provider, query, hits),
             Command::LockDecoration(tree) => {
                 if self.store.active_theme() == Some(id) && self.surfaces.set_lock_layout(tree) {
                     self.outbox.lock = true;
@@ -242,6 +244,50 @@ impl Daemon {
             }
         }
         self.schedule_flush();
+    }
+
+    fn render_tile(&mut self, id: &str, widget: &str, tree: Option<crownplugin_view::Node>) {
+        let size = self.registry.get(id).and_then(|entry| match &entry.package.manifest {
+            Manifest::Plugin(plugin) => plugin
+                .contributes
+                .launcher
+                .iter()
+                .find(|tile| tile.id == widget)
+                .map(|tile| tile.size),
+            Manifest::Theme(_) => None,
+        });
+        let Some(size) = size else {
+            return;
+        };
+        match self.surfaces.render_tile(id, widget, size, tree) {
+            Ok(true) => {
+                self.outbox.launcher = true;
+                self.schedule_flush();
+            }
+            Ok(false) => {}
+            Err(error) => self.log(id, LogLevel::Error, error),
+        }
+    }
+
+    /// Hits skip the frame batching: the launcher is waiting on them as the user types.
+    fn answer(&mut self, id: &str, provider: String, query: String, hits: Vec<crownplugin_proto::SearchHit>) {
+        let declared = self.registry.get(id).and_then(|entry| match &entry.package.manifest {
+            Manifest::Plugin(plugin) => plugin.contributes.search.iter().find(|declared| declared.id == provider),
+            Manifest::Theme(_) => None,
+        });
+        let Some(declared) = declared else {
+            return;
+        };
+        if declared.accepts(&self.search_query) != Some(query.as_str()) {
+            return;
+        }
+        let name = declared.name.clone();
+        let query = self.search_query.clone();
+        let results = crownplugin_proto::SearchResults { plugin: id.to_owned(), provider, name, query, hits };
+        if self.outbox.answers.is_empty() {
+            self.handle.insert_idle(Daemon::send_answers);
+        }
+        self.outbox.answers.push(results);
     }
 
     fn start_timer(&mut self, id: &str, timer: u32, every: Duration, repeat: bool) {
