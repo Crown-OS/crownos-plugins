@@ -35,3 +35,38 @@ fn entity_info_with_settings_survives_postcard() {
     let bytes = postcard::to_stdvec(&value).expect("encodes");
     assert_eq!(postcard::from_bytes::<SettingValue>(&bytes).expect("decodes"), value);
 }
+
+#[test]
+fn launcher_snapshots_and_search_results_survive_postcard() {
+    use crownplugin_proto::{
+        LauncherSize, LauncherSnapshot, LauncherSurface, Node, SearchHit, SearchResults, Tree,
+    };
+
+    let snapshot = LauncherSnapshot {
+        revision: 3,
+        tiles: vec![LauncherSurface {
+            plugin: "dev.test.quotes".into(),
+            widget: "quote".into(),
+            size: LauncherSize::Wide,
+            tree: Tree { rev: 1, root: Node::Spacer },
+        }],
+    };
+    let bytes = postcard::to_stdvec(&snapshot).expect("encodes");
+    assert_eq!(postcard::from_bytes::<LauncherSnapshot>(&bytes).expect("decodes"), snapshot);
+    assert_eq!(snapshot.tiles[0].entry(), "plugin:dev.test.quotes/quote");
+
+    let results = SearchResults {
+        plugin: "dev.test.calc".into(),
+        provider: "calc".into(),
+        name: "Calculator".into(),
+        query: "2+2".into(),
+        hits: vec![SearchHit {
+            id: "4".into(),
+            title: "4".into(),
+            subtitle: "2+2".into(),
+            icon: Some("calculator".into()),
+        }],
+    };
+    let bytes = postcard::to_stdvec(&results).expect("encodes");
+    assert_eq!(postcard::from_bytes::<SearchResults>(&bytes).expect("decodes"), results);
+}

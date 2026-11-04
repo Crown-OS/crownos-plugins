@@ -152,3 +152,33 @@ fn a_missing_entry_script_is_an_error() {
     )]);
     assert!(errors(&package).iter().any(|error| error.starts_with("script")));
 }
+
+#[test]
+fn launcher_tiles_and_search_providers_validate() {
+    let (_dir, package) = package(&[
+        (
+            "plugin.ron",
+            r#"Plugin(
+                id: "dev.test.launcher", name: "Launcher bits", version: "0.1.0",
+                contributes: (
+                    bar: [(id: "status")],
+                    launcher: [(id: "quote", size: Wide), (id: "status"), (id: "Bad id")],
+                    search: [
+                        (id: "calc", name: "Calculator"),
+                        (id: "calc", name: ""),
+                        (id: "github", name: "GitHub", keyword: "gh repo"),
+                    ],
+                ),
+            )"#,
+        ),
+        ("main.luau", "return {}"),
+    ]);
+    let errors = errors(&package);
+    let has = |at: &str| errors.iter().any(|error| error.starts_with(at));
+    assert!(!has("contributes.launcher[0]"), "{errors:?}");
+    assert!(has("contributes.launcher[1].id"), "a tile may not share a bar widget's id");
+    assert!(has("contributes.launcher[2].id"));
+    assert!(!has("contributes.search[0]"));
+    assert!(has("contributes.search[1].id") && has("contributes.search[1].name"));
+    assert!(has("contributes.search[2].keyword"));
+}

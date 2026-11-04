@@ -217,6 +217,7 @@ impl Daemon {
         let (bar, lock) = self.surfaces.remove(id);
         self.outbox.bar |= bar;
         self.outbox.lock |= lock;
+        self.outbox.launcher |= self.surfaces.remove_tiles(id);
         self.schedule_flush();
     }
 

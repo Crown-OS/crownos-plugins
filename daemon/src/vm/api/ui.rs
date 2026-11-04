@@ -1,4 +1,5 @@
 //! `ui`: node builders from the prelude, plus `ui.render` and `ui.lock_layout`.
+//! A launcher tile has one tree, so its `popup` argument is ignored.
 
 use crownplugin_proto::Part;
 use mlua::{Lua, Table, Value};
@@ -12,6 +13,7 @@ const PRELUDE: &str = include_str!("../prelude.luau");
 enum Target {
     Bar,
     Lock,
+    Launcher,
 }
 
 fn render(lua: &Lua, (widget, main, popup): (String, Value, Value)) -> mlua::Result<()> {
@@ -20,18 +22,20 @@ fn render(lua: &Lua, (widget, main, popup): (String, Value, Value)) -> mlua::Res
             Some(Target::Bar)
         } else if host.lock_slots.iter().any(|(id, _)| *id == widget) {
             Some(Target::Lock)
+        } else if host.launcher_tiles.contains(&widget) {
+            Some(Target::Launcher)
         } else {
             None
         }
     })?
     .ok_or_else(|| {
         mlua::Error::runtime(format!(
-            "`{widget}` is not declared in contributes.bar or contributes.lock"
+            "`{widget}` is not declared in contributes.bar, contributes.lock or contributes.launcher"
         ))
     })?;
     let parts = match target {
         Target::Bar => vec![(Part::Main, main), (Part::Popup, popup)],
-        Target::Lock => vec![(Part::Main, main)],
+        Target::Lock | Target::Launcher => vec![(Part::Main, main)],
     };
     for (part, value) in parts {
         let mut converter = Converter::new(false);
@@ -41,15 +45,15 @@ fn render(lua: &Lua, (widget, main, popup): (String, Value, Value)) -> mlua::Res
         };
         let tree = match target {
             Target::Lock => tree.map(crownplugin_view::Node::into_display_only),
-            Target::Bar => tree,
+            Target::Bar | Target::Launcher => tree,
+        };
+        let command = match target {
+            Target::Launcher => Command::RenderTile { widget: widget.clone(), tree },
+            Target::Bar | Target::Lock => Command::Render { widget: widget.clone(), part, tree },
         };
         host(lua, |host| {
             host.handlers.insert((widget.clone(), part), converter.handlers);
-            host.commands.push(Command::Render {
-                widget: widget.clone(),
-                part,
-                tree,
-            });
+            host.commands.push(command);
         })?;
     }
     Ok(())

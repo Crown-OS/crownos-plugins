@@ -11,8 +11,8 @@ use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
 pub use plugin::{
-    BarSlot, BarWidgetDecl, Contributes, KeybindDecl, Limits, LockSlotDecl, LockSlotPosition,
-    PluginManifest,
+    BarSlot, BarWidgetDecl, Contributes, KeybindDecl, LauncherSize, LauncherWidgetDecl, Limits,
+    LockSlotDecl, LockSlotPosition, PluginManifest, SearchProviderDecl,
 };
 pub use ron_text::RonText;
 pub use theme::{LockTheme, ThemeAssets, ThemeManifest, Tokens, Wallpaper};

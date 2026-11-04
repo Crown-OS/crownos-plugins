@@ -3,7 +3,7 @@
 Themes and plugins for CrownOS.
 
 - A **theme** restyles the whole desktop: theme tokens, blur and other appearance settings, the wallpaper, the lock screen, the bar, cursors, icons, fonts, sounds and GTK/Qt colors.
-- A **plugin** adds behaviour: bar widgets with popups, lock-screen slots, a settings page, keybindings, window rules and reactions to the desktop.
+- A **plugin** adds behaviour: bar widgets with popups, lock-screen slots, launcher tiles and search providers, a settings page, keybindings, window rules and reactions to the desktop.
 
 Both are a folder holding a RON manifest and sandboxed Luau, so an AI can write one in a single pass.
 
@@ -17,7 +17,7 @@ Both are a folder holding a RON manifest and sandboxed Luau, so an AI can write 
 | `cli` → `crownplugin` | `new`, `validate`, `pack`, `install`, `dev`, `list`, `enable`, `theme`, `logs`, `set`, `grant`, `skill` |
 | `sysassets` → `crownplugin-sysassets` | The pkexec helper that installs a theme's cursors and lock fonts system-wide |
 
-`types/crown.d.luau` holds the typed script API. `skill/SKILL.md` is the authoring guide for coding agents (`crownplugin skill` installs both). `examples/` has a theme and three plugins.
+`types/crown.d.luau` holds the typed script API. `skill/SKILL.md` is the authoring guide for coding agents (`crownplugin skill` installs both). `examples/` has a theme and four plugins.
 
 ## How it works
 
@@ -26,7 +26,7 @@ Both are a folder holding a RON manifest and sandboxed Luau, so an AI can write 
                 │
          crownplugind ── journal + write-through ──▶ ~/.config/crownos/*.ron ──▶ every app
           │  one sandboxed Luau VM per running entity
-          ├── crownos-ipc "crownplugind" ◀── crownbar · crownos-settings · crownplugin
+          ├── crownos-ipc "crownplugind" ◀── crownbar · crownlauncher · crownos-settings · crownplugin
           ├── crownos_plugin_host_v1 (Wayland) ◀──▶ crownpositor: actions, window events,
           │                                         plugin keybindings, lock-screen slots and assets
           └── org.freedesktop.impl.portal.Access ──▶ xdg-desktop-portal-crownos (permission prompts)

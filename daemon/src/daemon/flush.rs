@@ -3,9 +3,9 @@
 use std::time::Duration;
 
 use calloop::timer::{TimeoutAction, Timer};
-use crownplugin_proto::plugind::{BarChanged, EntitiesChanged, LockChanged, Logged};
+use crownplugin_proto::plugind::{BarChanged, EntitiesChanged, LauncherChanged, LockChanged, Logged, SearchAnswered};
 
-use super::Daemon;
+use super::{Daemon, Outbox};
 
 /// ~30 Hz, the fastest a plugin surface is ever re-sent.
 const FLUSH_DELAY: Duration = Duration::from_millis(33);
@@ -44,9 +44,22 @@ impl Daemon {
         }
     }
 
+    pub fn send_answers(&mut self) {
+        let answers = std::mem::take(&mut self.outbox.answers);
+        let Some(ipc) = self.ipc.clone() else {
+            return;
+        };
+        for results in answers {
+            if let Err(error) = ipc.emit(&SearchAnswered { results }) {
+                tracing::warn!("emitting search results: {error}");
+            }
+        }
+    }
+
     fn flush(&mut self) {
         self.outbox.scheduled = false;
-        let outbox = std::mem::take(&mut self.outbox);
+        let answers = std::mem::take(&mut self.outbox.answers);
+        let outbox = std::mem::replace(&mut self.outbox, Outbox { answers, ..Outbox::default() });
         if outbox.lock && self.compositor.is_some() {
             self.push_lock();
         }
@@ -63,6 +76,9 @@ impl Daemon {
         }
         if outbox.lock {
             emit(ipc.emit(&LockChanged { snapshot: self.surfaces.lock() }));
+        }
+        if outbox.launcher {
+            emit(ipc.emit(&LauncherChanged { snapshot: self.surfaces.launcher() }));
         }
         if outbox.entities {
             self.entities_revision += 1;
