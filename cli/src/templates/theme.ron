@@ -18,6 +18,6 @@ Theme(
         "appearance": {"dark_mode": true, "blur_passes": 4, "border_radius": 12},
         "bar": {"floating": true, "margin": 8},
     },
-    lock: Some((clock_style: Large, dim: 0.35)),
+    lock: Some((dim: 0.35)),
     assets: (gtk: true, qt: true),
 )

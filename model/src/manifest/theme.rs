@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use crownos_config::schema::theme::{AccentGradient, Font, Radii};
-use crownos_config::schema::{ClockStyle, LockBackground, LockLayout, LockTransitions, Placement};
+use crownos_config::schema::{LockBackground, Placement};
 use serde::{Deserialize, Serialize};
 
 use super::{ConfigPatch, api_v1};
@@ -76,16 +76,10 @@ impl Wallpaper {
 #[serde(default)]
 pub struct LockTheme {
     pub background: Option<LockBackground>,
-    pub clock_style: Option<ClockStyle>,
     pub time_format: Option<String>,
     pub date_format: Option<String>,
-    /// A font family the theme installs system-wide through `assets.system`.
-    pub font: Option<String>,
-    pub layout: Option<LockLayout>,
     pub dim: Option<f32>,
-    pub blur: Option<f32>,
     pub auth_field: Option<Placement>,
-    pub transitions: Option<LockTransitions>,
     pub show_user: Option<bool>,
 }
 

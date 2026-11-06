@@ -61,13 +61,7 @@ Theme(
         "bar": {"floating": true, "margin": 8, "radius": 14, "position": Top},
     },
     wallpaper: (dark: "wallpapers/night.jpg", light: "wallpapers/day.jpg"),
-    lock: (
-        background: Image("wallpapers/lock.jpg"), clock_style: Large, dim: 0.35, blur: 0.8,
-        transitions: (
-            appear: (effects: [Fade, Zoom(from: 0.9)], duration_ms: 480),
-            reveal: (effects: [Fade, Blur(radius: 16.0), Slide(from: Bottom, distance: 48.0)], easing: Spring),
-        ),
-    ),
+    lock: (background: Image("wallpapers/lock.jpg"), dim: 0.35),
     assets: (icons: "icons/Midnight", cursors: "cursors/Midnight", fonts: ["fonts"], sounds: "sounds/midnight", system: "system", gtk: true, qt: true),
     script: Some("theme.luau"),
 )
@@ -82,16 +76,9 @@ Theme(
   - `height`, `position` (`Top|Bottom`), `floating`, `margin`, `radius`;
   - `left`, `center`, `right`: lists of widget names (built-ins: `clock`, `layout`, `weather`, `caffeine`, `volume`, `brightness`, `bluetooth`, `wifi`, `battery`, `notifications`).
 - **`lock`:**
-  - `clock_style` (`Classic|Large|Minimal|Stacked`), `time_format` and `date_format` (strftime);
-  - `font`, a system font family; ship it under `assets.system/fonts`;
-  - `layout` (`Center|Left|Bottom`), `background` (`Desktop | Image("rel/path") | Token("surface.bg")`), `dim` and `blur` (0–1);
+  - `time_format` and `date_format` (strftime);
+  - `background` (`Desktop | Image("rel/path") | Token("surface.bg")`) and `dim` (0–1);
   - `show_user` (default `true`) shows the user's name above the password field;
-  - `transitions: (appear, reveal, dismiss)`, each a `Transition(effects: [..], duration_ms, easing)`:
-    - `appear` is the clock arriving as the screen locks, `reveal` the clock giving way to the password prompt (and back after `prompt_timeout_secs` without input), `dismiss` everything leaving on unlock;
-    - effects compose and play together: `Fade`, `Blur(radius: 0–64)`, `Slide(from: Top|Bottom|Left|Right, distance: 0–600)`, `Zoom(from: 0.5–1.5)`, at most 8 per transition;
-    - each effect describes how a layer *enters*; a leaving layer plays it in reverse but motion carries on through, so a layer that slid in from the bottom leaves through the top and one that zoomed in from smaller leaves by growing;
-    - `duration_ms` is 0–2000 and `easing` is `Linear|EaseIn|EaseOut|EaseInOut|Spring`; `effects: []` or `duration_ms: 0` is instant;
-    - a transition left out, or a field left out of one, keeps its default.
   - `prompt_timeout_secs` (default 20, at most 600) is how long the prompt waits for input before the clock returns. It is the user's setting: a theme can only set it through `config`.
 - **`gtk` / `qt`** generate matching colors for third-party apps from the tokens.
 - **`script`** (optional) is Luau with the same API as plugins, for dynamic looks such as a wallpaper that follows the time of day (`wallpaper.set`). It can also lay out the lock screen with `ui.lock_layout` and placeholders: `lock.clock`, `lock.date`, `lock.secure_field` (exactly one), `lock.auth_prompt`, `lock.user`, `lock.caps`, `lock.power` and `lock.slot:plugin:<id>/<widget>`. `lock.power` is reserved and currently draws nothing. Images in a lock layout are sent to the compositor as content-addressed assets, so use package-relative paths.

@@ -1,6 +1,6 @@
 //! `crownplugin-sysassets install <id> <dir>` / `remove <id>`, run as root
 //! through pkexec. Copies the files a theme needs the compositor to see
-//! (cursors, lock-screen fonts) out of the caller's own theme package.
+//! (cursors, fonts) out of the caller's own theme package.
 
 use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};

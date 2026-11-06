@@ -95,16 +95,11 @@ pub fn theme_changes(package: &Package, theme: &ThemeManifest) -> Result<Vec<Cha
             };
             changes.push(set("lock", "background", ron(&background)?));
         }
-        let optional: [(&str, Option<String>); 10] = [
-            ("clock_style", lock.clock_style.map(|v| ron(&v)).transpose()?),
+        let optional: [(&str, Option<String>); 5] = [
             ("time_format", lock.time_format.as_ref().map(ron).transpose()?),
             ("date_format", lock.date_format.as_ref().map(ron).transpose()?),
-            ("font", lock.font.as_ref().map(|font| ron(&Some(font))).transpose()?),
-            ("layout", lock.layout.map(|v| ron(&v)).transpose()?),
             ("dim", lock.dim.map(|v| ron(&v)).transpose()?),
-            ("blur", lock.blur.map(|v| ron(&v)).transpose()?),
             ("auth_field", lock.auth_field.map(|v| ron(&v)).transpose()?),
-            ("transitions", lock.transitions.as_ref().map(ron).transpose()?),
             ("show_user", lock.show_user.map(|v| ron(&v)).transpose()?),
         ];
         changes.extend(

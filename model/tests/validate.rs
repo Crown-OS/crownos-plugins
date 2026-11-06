@@ -33,7 +33,7 @@ fn a_complete_theme_validates() {
                 tokens: (dark: {"surface.bg": "#0b0d12"}, accent: (start: "#8f6dfb", end: "#6d48e8")),
                 config: {"appearance": {"blur_passes": 4, "accent": Blue}, "bar": {"floating": true}},
                 wallpaper: (dark: "night.jpg"),
-                lock: (background: Image("lock.jpg"), clock_style: Large, dim: 0.4),
+                lock: (background: Image("lock.jpg"), dim: 0.4),
                 assets: (system: "system", gtk: true),
             )"##,
         ),
@@ -69,33 +69,6 @@ fn bad_tokens_values_and_missing_files_are_all_reported() {
             "expected an error at {needle}, got {errors:#?}"
         );
     }
-}
-
-#[test]
-fn lock_transitions_are_held_to_the_scene_bounds() {
-    let (_dir, package) = package(&[(
-        "theme.ron",
-        r#"Theme(
-            id: "crown.restless", name: "Restless", version: "1.0.0",
-            lock: (transitions: (
-                appear: (effects: [Fade, Zoom(from: 0.9)], duration_ms: 400),
-                reveal: (effects: [Blur(radius: 500.0), Slide(from: Top, distance: 40.0)]),
-                dismiss: (effects: [Zoom(from: 3.0)], duration_ms: 60000),
-            )),
-        )"#,
-    )]);
-    let errors = errors(&package);
-    for needle in [
-        "lock.transitions.reveal.effects[0]",
-        "lock.transitions.dismiss.effects[0]",
-        "lock.transitions.dismiss.duration_ms",
-    ] {
-        assert!(
-            errors.iter().any(|error| error.starts_with(needle)),
-            "expected an error at {needle}, got {errors:#?}"
-        );
-    }
-    assert_eq!(errors.len(), 3, "{errors:#?}");
 }
 
 #[test]

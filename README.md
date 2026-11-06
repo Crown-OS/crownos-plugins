@@ -15,7 +15,7 @@ Both are a folder holding a RON manifest and sandboxed Luau, so an AI can write 
 | `render` → `crownplugin-render` | Tree → crownui views, used by the bar, Settings and the compositor's lock UI |
 | `daemon` → `crownplugind` | Runs everything: one Luau VM per entity, the journal, permissions, the compositor link |
 | `cli` → `crownplugin` | `new`, `validate`, `pack`, `install`, `dev`, `list`, `enable`, `theme`, `logs`, `set`, `grant`, `skill` |
-| `sysassets` → `crownplugin-sysassets` | The pkexec helper that installs a theme's cursors and lock fonts system-wide |
+| `sysassets` → `crownplugin-sysassets` | The pkexec helper that installs a theme's cursors and fonts system-wide |
 
 `types/crown.d.luau` holds the typed script API. `skill/SKILL.md` is the authoring guide for coding agents (`crownplugin skill` installs both). `examples/` has a theme and four plugins.
 

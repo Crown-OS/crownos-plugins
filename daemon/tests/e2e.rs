@@ -116,8 +116,7 @@ fn a_theme_applies_and_the_stock_look_comes_back() {
     assert!(daemon.config("appearance").contains("border_radius: 12"));
     assert!(daemon.config("theme").contains("#0b0d12"));
     let lock = daemon.config("lock");
-    assert!(lock.contains("clock_style: Large"), "{lock}");
-    assert!(lock.contains("Spring"), "the theme's transitions are written: {lock}");
+    assert!(lock.contains("dim: 0.35"), "{lock}");
 
     call!(daemon, set_theme(None)).expect("deactivates");
     assert!(daemon.config("appearance").contains("border_radius: 8"));
