@@ -3,10 +3,7 @@
 use crownplugin_view::{ButtonVariant, Node, NodeId, Style, Tone, UiEvent};
 use geometry::{Point, Rect};
 use view::{AnyView, Cx, Listeners, Styled, View, bind};
-use widgets::kit::{
-    self, ButtonOptions as _, SliderOptions as _,
-    ToggleOptions as _,
-};
+use widgets::kit::{self, ButtonOptions as _, SliderOptions as _, ToggleOptions as _};
 use widgets::{canvas, hstack, spacer, text, vstack, zstack};
 
 use crate::style::{BoxedProp, Palette, apply, text_size, text_token};
@@ -58,14 +55,26 @@ impl<'a> Builder<'a> {
 
     pub fn node(&self, cx: &mut Cx, node: &Node) -> AnyView {
         match node {
-            Node::VStack { style, children } => self.style(vstack(self.children(cx, children)), style),
-            Node::HStack { style, children } => self.style(hstack(self.children(cx, children)), style),
-            Node::ZStack { style, children } => self.style(zstack(self.children(cx, children)), style),
-            Node::Card { style, children } => self.style(kit::card(self.children(cx, children)), style),
-            Node::Text { style, text: content } => {
+            Node::VStack { style, children } => {
+                self.style(vstack(self.children(cx, children)), style)
+            }
+            Node::HStack { style, children } => {
+                self.style(hstack(self.children(cx, children)), style)
+            }
+            Node::ZStack { style, children } => {
+                self.style(zstack(self.children(cx, children)), style)
+            }
+            Node::Card { style, children } => {
+                self.style(kit::card(self.children(cx, children)), style)
+            }
+            Node::Text {
+                style,
+                text: content,
+            } => {
                 let theme = self.palette.theme;
-                let element = text(content.clone())
-                    .text_color(bind(move |runtime| theme.with(runtime, |theme| theme.text.body)));
+                let element = text(content.clone()).text_color(bind(move |runtime| {
+                    theme.with(runtime, |theme| theme.text.body)
+                }));
                 self.style(element, style)
             }
             Node::Icon { style, name } => self.icon(name, style),
@@ -95,11 +104,29 @@ impl<'a> Builder<'a> {
                 .boxed()
             }
             Node::Progress { style, value } => self.style(kit::progress(*value), style),
-            Node::Button { id, style, label, icon, variant } => self.button(*id, style, label, icon.as_deref(), *variant),
+            Node::Button {
+                id,
+                style,
+                label,
+                icon,
+                variant,
+            } => self.button(*id, style, label, icon.as_deref(), *variant),
             Node::Toggle { id, label, on } => self.toggle(cx, *id, label, *on),
-            Node::Slider { id, value, min, max, step } => self.slider(cx, *id, *value, *min, *max, *step),
-            Node::Select { id, options, selected } => self.select(cx, *id, options, *selected),
-            Node::Placeholder { name } => self.resolver.placeholder(name, cx).unwrap_or_else(nothing),
+            Node::Slider {
+                id,
+                value,
+                min,
+                max,
+                step,
+            } => self.slider(cx, *id, *value, *min, *max, *step),
+            Node::Select {
+                id,
+                options,
+                selected,
+            } => self.select(cx, *id, options, *selected),
+            Node::Placeholder { name } => {
+                self.resolver.placeholder(name, cx).unwrap_or_else(nothing)
+            }
         }
     }
 
@@ -109,7 +136,10 @@ impl<'a> Builder<'a> {
             .unwrap_or_default();
         let size = text_size(style).unwrap_or(ICON_SIZE);
         let tint = match text_token(style) {
-            Some(token) => self.palette.color(token, |theme| theme.text.icon).boxed_prop(),
+            Some(token) => self
+                .palette
+                .color(token, |theme| theme.text.icon)
+                .boxed_prop(),
             None => {
                 let theme = self.palette.theme;
                 bind(move |runtime| theme.with(runtime, |theme| theme.text.icon)).boxed_prop()
@@ -124,7 +154,14 @@ impl<'a> Builder<'a> {
         self.style(element, &style)
     }
 
-    fn button(&self, id: NodeId, style: &[Style], label: &str, icon: Option<&str>, variant: ButtonVariant) -> AnyView {
+    fn button(
+        &self,
+        id: NodeId,
+        style: &[Style],
+        label: &str,
+        icon: Option<&str>,
+        variant: ButtonVariant,
+    ) -> AnyView {
         let send = self.sender();
         let body = icon.and_then(crownplugin_view::lucide);
         let element = match (label.is_empty(), body) {
@@ -159,7 +196,15 @@ impl<'a> Builder<'a> {
         kit::toggle(signal).caption(label.to_owned()).boxed()
     }
 
-    fn slider(&self, cx: &mut Cx, id: NodeId, value: f32, min: f32, max: f32, step: f32) -> AnyView {
+    fn slider(
+        &self,
+        cx: &mut Cx,
+        id: NodeId,
+        value: f32,
+        min: f32,
+        max: f32,
+        step: f32,
+    ) -> AnyView {
         let signal = cx.signal(value);
         let send = self.sender();
         let mut last = value;

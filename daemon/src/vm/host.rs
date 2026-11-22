@@ -115,10 +115,26 @@ impl Host {
             Manifest::Plugin(plugin) => {
                 let contributes = &plugin.contributes;
                 (
-                    contributes.bar.iter().map(|widget| widget.id.clone()).collect(),
-                    contributes.lock.iter().map(|slot| (slot.id.clone(), slot.slot)).collect(),
-                    contributes.launcher.iter().map(|tile| tile.id.clone()).collect(),
-                    contributes.search.iter().map(|provider| provider.id.clone()).collect(),
+                    contributes
+                        .bar
+                        .iter()
+                        .map(|widget| widget.id.clone())
+                        .collect(),
+                    contributes
+                        .lock
+                        .iter()
+                        .map(|slot| (slot.id.clone(), slot.slot))
+                        .collect(),
+                    contributes
+                        .launcher
+                        .iter()
+                        .map(|tile| tile.id.clone())
+                        .collect(),
+                    contributes
+                        .search
+                        .iter()
+                        .map(|provider| provider.id.clone())
+                        .collect(),
                 )
             }
             Manifest::Theme(_) => (Vec::new(), Vec::new(), Vec::new(), Vec::new()),

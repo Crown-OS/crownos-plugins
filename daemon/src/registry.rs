@@ -87,7 +87,11 @@ impl Registry {
 
     pub fn insert_dev(&mut self, package: Package) -> EntityId {
         let id = package.id().clone();
-        let logs = self.entries.remove(id.as_str()).map(|old| old.logs).unwrap_or_default();
+        let logs = self
+            .entries
+            .remove(id.as_str())
+            .map(|old| old.logs)
+            .unwrap_or_default();
         let mut entry = Entry::new(package, true);
         entry.logs = logs;
         self.entries.insert(id.to_string(), entry);

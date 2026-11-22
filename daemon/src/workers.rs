@@ -29,12 +29,19 @@ pub fn complete(sender: &Sender<Message>, entity: &str, request: u32, completion
 
 /// Whether `url` is http(s) to one of `hosts` or a subdomain of one.
 pub fn host_allowed(url: &str, hosts: &[String]) -> bool {
-    let Some(rest) = url.strip_prefix("https://").or_else(|| url.strip_prefix("http://")) else {
+    let Some(rest) = url
+        .strip_prefix("https://")
+        .or_else(|| url.strip_prefix("http://"))
+    else {
         return false;
     };
     let authority = rest.split(['/', '?', '#']).next().unwrap_or_default();
     let host = authority.rsplit('@').next().unwrap_or_default();
-    let host = host.split(':').next().unwrap_or_default().to_ascii_lowercase();
+    let host = host
+        .split(':')
+        .next()
+        .unwrap_or_default()
+        .to_ascii_lowercase();
     hosts.iter().any(|allowed| {
         let allowed = allowed.to_ascii_lowercase();
         host == allowed || host.ends_with(&format!(".{allowed}"))
@@ -59,7 +66,14 @@ fn spawn(name: &str, work: impl FnOnce() + Send + 'static) {
     }
 }
 
-pub fn http(sender: Sender<Message>, entity: &str, request: u32, post: bool, url: String, body: Option<String>) {
+pub fn http(
+    sender: Sender<Message>,
+    entity: &str,
+    request: u32,
+    post: bool,
+    url: String,
+    body: Option<String>,
+) {
     let entity = entity.to_owned();
     spawn("http", move || {
         let response = if post {
@@ -70,7 +84,12 @@ pub fn http(sender: Sender<Message>, entity: &str, request: u32, post: bool, url
         let completion = match response {
             Ok(mut response) => {
                 let status = response.status().as_u16();
-                match response.body_mut().with_config().limit(MAX_FILE).read_to_string() {
+                match response
+                    .body_mut()
+                    .with_config()
+                    .limit(MAX_FILE)
+                    .read_to_string()
+                {
                     Ok(body) => Completion::Http { status, body },
                     Err(error) => Completion::Error(error.to_string()),
                 }
@@ -98,8 +117,14 @@ pub fn exec(sender: Sender<Message>, entity: &str, request: u32, argv: Vec<Strin
             .spawn();
         let completion = match child {
             Ok(mut child) => {
-                let stdout = child.stdout.take().map(|out| std::thread::spawn(move || read_capped(out)));
-                let stderr = child.stderr.take().map(|err| std::thread::spawn(move || read_capped(err)));
+                let stdout = child
+                    .stdout
+                    .take()
+                    .map(|out| std::thread::spawn(move || read_capped(out)));
+                let stderr = child
+                    .stderr
+                    .take()
+                    .map(|err| std::thread::spawn(move || read_capped(err)));
                 let started = Instant::now();
                 let status = loop {
                     match child.try_wait() {
@@ -115,7 +140,9 @@ pub fn exec(sender: Sender<Message>, entity: &str, request: u32, argv: Vec<Strin
                     }
                 };
                 let join = |handle: Option<std::thread::JoinHandle<String>>| {
-                    handle.and_then(|handle| handle.join().ok()).unwrap_or_default()
+                    handle
+                        .and_then(|handle| handle.join().ok())
+                        .unwrap_or_default()
                 };
                 match status {
                     Some(status) => Completion::Exec {
@@ -123,7 +150,9 @@ pub fn exec(sender: Sender<Message>, entity: &str, request: u32, argv: Vec<Strin
                         stdout: join(stdout),
                         stderr: join(stderr),
                     },
-                    None => Completion::Error(format!("{} ran longer than {EXEC_TIMEOUT:?}", argv[0])),
+                    None => {
+                        Completion::Error(format!("{} ran longer than {EXEC_TIMEOUT:?}", argv[0]))
+                    }
                 }
             }
             Err(error) => Completion::Error(format!("{}: {error}", argv[0])),
@@ -178,7 +207,9 @@ pub fn files(sender: &Sender<Message>, entity: &str, command: ScriptCommand) {
     let (request, result) = match command {
         ScriptCommand::ReadFile { request, dir, path } => (
             request,
-            resolve(dir, &path, true).and_then(|path| read_file(&path)).map(Completion::Text),
+            resolve(dir, &path, true)
+                .and_then(|path| read_file(&path))
+                .map(Completion::Text),
         ),
         ScriptCommand::ListDir { request, dir, path } => (
             request,
@@ -192,7 +223,12 @@ pub fn files(sender: &Sender<Message>, entity: &str, command: ScriptCommand) {
                 ))
             }),
         ),
-        ScriptCommand::WriteFile { request, dir, path, text } => (
+        ScriptCommand::WriteFile {
+            request,
+            dir,
+            path,
+            text,
+        } => (
             request,
             resolve(dir, &path, false).and_then(|path| {
                 crate::util::fsx::write_atomic(&path, text.as_bytes())
@@ -202,7 +238,12 @@ pub fn files(sender: &Sender<Message>, entity: &str, command: ScriptCommand) {
         ),
         _ => return,
     };
-    complete(sender, entity, request, result.unwrap_or_else(Completion::Error));
+    complete(
+        sender,
+        entity,
+        request,
+        result.unwrap_or_else(Completion::Error),
+    );
 }
 
 crownos_ipc::protocol! {

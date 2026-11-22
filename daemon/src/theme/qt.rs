@@ -4,11 +4,22 @@ use super::gtk::{Palette, Rgba};
 
 fn argb([r, g, b, a]: Rgba) -> String {
     let byte = |channel: f32| (channel.clamp(0.0, 1.0) * 255.0).round() as u8;
-    format!("#{:02x}{:02x}{:02x}{:02x}", byte(a), byte(r), byte(g), byte(b))
+    format!(
+        "#{:02x}{:02x}{:02x}{:02x}",
+        byte(a),
+        byte(r),
+        byte(g),
+        byte(b)
+    )
 }
 
 fn mix([r1, g1, b1, _]: Rgba, [r2, g2, b2, _]: Rgba, t: f32) -> Rgba {
-    [r1 + (r2 - r1) * t, g1 + (g2 - g1) * t, b1 + (b2 - b1) * t, 1.0]
+    [
+        r1 + (r2 - r1) * t,
+        g1 + (g2 - g1) * t,
+        b1 + (b2 - b1) * t,
+        1.0,
+    ]
 }
 
 pub fn color_scheme(palette: &Palette) -> String {
@@ -39,8 +50,17 @@ pub fn color_scheme(palette: &Palette) -> String {
         p.window_fg,
         p.muted,
     ];
-    let disabled: Vec<Rgba> = active.iter().map(|color| mix(*color, p.window_bg, 0.5)).collect();
-    let join = |colors: &[Rgba]| colors.iter().map(|color| argb(*color)).collect::<Vec<_>>().join(", ");
+    let disabled: Vec<Rgba> = active
+        .iter()
+        .map(|color| mix(*color, p.window_bg, 0.5))
+        .collect();
+    let join = |colors: &[Rgba]| {
+        colors
+            .iter()
+            .map(|color| argb(*color))
+            .collect::<Vec<_>>()
+            .join(", ")
+    };
     format!(
         "[ColorScheme]\nactive_colors={}\ndisabled_colors={}\ninactive_colors={}\n",
         join(&active),

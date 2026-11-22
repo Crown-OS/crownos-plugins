@@ -15,7 +15,9 @@ pub enum UiEvent {
 impl UiEvent {
     pub fn node(&self) -> NodeId {
         match self {
-            Self::Click(id) | Self::Toggle(id, _) | Self::Change(id, _) | Self::Select(id, _) => *id,
+            Self::Click(id) | Self::Toggle(id, _) | Self::Change(id, _) | Self::Select(id, _) => {
+                *id
+            }
         }
     }
 }

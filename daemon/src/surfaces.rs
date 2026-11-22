@@ -194,7 +194,9 @@ impl Surfaces {
 fn check_size(widget: &str, node: Option<&Node>) -> Result<(), String> {
     let size = node.map_or(0, postcard_len);
     if size > MAX_TREE_BYTES {
-        return Err(format!("`{widget}` renders {size} bytes; the limit is {MAX_TREE_BYTES}"));
+        return Err(format!(
+            "`{widget}` renders {size} bytes; the limit is {MAX_TREE_BYTES}"
+        ));
     }
     Ok(())
 }
@@ -208,25 +210,44 @@ mod tests {
     use super::*;
 
     fn text(value: &str) -> Node {
-        Node::Text { style: Vec::new(), text: value.into() }
+        Node::Text {
+            style: Vec::new(),
+            text: value.into(),
+        }
     }
 
     #[test]
     fn identical_renders_keep_their_revision() {
         let mut surfaces = Surfaces::default();
-        assert_eq!(surfaces.render("p", "w", Part::Main, Some(text("a")), None), Ok(Changed::Bar));
-        assert_eq!(surfaces.render("p", "w", Part::Main, Some(text("a")), None), Ok(Changed::Nothing));
+        assert_eq!(
+            surfaces.render("p", "w", Part::Main, Some(text("a")), None),
+            Ok(Changed::Bar)
+        );
+        assert_eq!(
+            surfaces.render("p", "w", Part::Main, Some(text("a")), None),
+            Ok(Changed::Nothing)
+        );
         assert_eq!(surfaces.current_rev("p", "w", Part::Main), Some(1));
-        surfaces.render("p", "w", Part::Main, Some(text("b")), None).expect("fits");
+        surfaces
+            .render("p", "w", Part::Main, Some(text("b")), None)
+            .expect("fits");
         assert_eq!(surfaces.current_rev("p", "w", Part::Main), Some(2));
     }
 
     #[test]
     fn removing_a_plugin_clears_its_surfaces() {
         let mut surfaces = Surfaces::default();
-        surfaces.render("p", "w", Part::Main, Some(text("a")), None).expect("fits");
         surfaces
-            .render("p", "slot", Part::Main, Some(text("b")), Some(LockSlotPosition::Bottom))
+            .render("p", "w", Part::Main, Some(text("a")), None)
+            .expect("fits");
+        surfaces
+            .render(
+                "p",
+                "slot",
+                Part::Main,
+                Some(text("b")),
+                Some(LockSlotPosition::Bottom),
+            )
             .expect("fits");
         assert_eq!(surfaces.remove("p"), (true, true));
         assert!(surfaces.bar().surfaces.is_empty() && surfaces.lock().surfaces.is_empty());
@@ -235,15 +256,27 @@ mod tests {
     #[test]
     fn launcher_tiles_are_versioned_and_cleared_with_their_plugin() {
         let mut surfaces = Surfaces::default();
-        assert_eq!(surfaces.render_tile("p", "t", LauncherSize::Wide, Some(text("a"))), Ok(true));
-        assert_eq!(surfaces.render_tile("p", "t", LauncherSize::Wide, Some(text("a"))), Ok(false));
-        assert_eq!(surfaces.render_tile("p", "t", LauncherSize::Small, Some(text("a"))), Ok(true));
+        assert_eq!(
+            surfaces.render_tile("p", "t", LauncherSize::Wide, Some(text("a"))),
+            Ok(true)
+        );
+        assert_eq!(
+            surfaces.render_tile("p", "t", LauncherSize::Wide, Some(text("a"))),
+            Ok(false)
+        );
+        assert_eq!(
+            surfaces.render_tile("p", "t", LauncherSize::Small, Some(text("a"))),
+            Ok(true)
+        );
         assert_eq!(surfaces.current_rev("p", "t", Part::Main), Some(1));
         assert_eq!(surfaces.current_rev("p", "t", Part::Popup), None);
         let snapshot = surfaces.launcher();
         assert_eq!(snapshot.tiles.len(), 1);
         assert_eq!(snapshot.tiles[0].size, LauncherSize::Small);
-        assert!(surfaces.bar().surfaces.is_empty(), "tiles are not bar pills");
+        assert!(
+            surfaces.bar().surfaces.is_empty(),
+            "tiles are not bar pills"
+        );
         assert!(surfaces.remove_tiles("p"));
         assert!(surfaces.launcher().tiles.is_empty());
     }

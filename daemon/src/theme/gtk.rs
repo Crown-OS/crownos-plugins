@@ -32,7 +32,11 @@ fn hex(text: &str) -> Rgba {
 
 impl Palette {
     pub fn of(theme: &ThemeManifest, dark: bool) -> Self {
-        let tokens = if dark { &theme.tokens.dark } else { &theme.tokens.light };
+        let tokens = if dark {
+            &theme.tokens.dark
+        } else {
+            &theme.tokens.light
+        };
         let pick = |token: &str, dark_default: &str, light_default: &str| {
             tokens
                 .get(token)

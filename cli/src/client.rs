@@ -19,7 +19,10 @@ impl Daemon {
         Ok(Self { client })
     }
 
-    pub fn wait<R: serde::de::DeserializeOwned>(&mut self, pending: Result<Pending<R>, crownos_ipc::Error>) -> Result<R> {
+    pub fn wait<R: serde::de::DeserializeOwned>(
+        &mut self,
+        pending: Result<Pending<R>, crownos_ipc::Error>,
+    ) -> Result<R> {
         let pending = pending?;
         Ok(self.client.wait(pending, Some(TIMEOUT))?)
     }
@@ -35,7 +38,8 @@ impl Daemon {
 
     /// Print log lines for `id` as they arrive, until interrupted.
     pub fn follow_logs(&mut self, id: &str) -> Result<()> {
-        self.client.subscribe_blocking::<plugind::Logged>(Some(Duration::from_secs(5)))?;
+        self.client
+            .subscribe_blocking::<plugind::Logged>(Some(Duration::from_secs(5)))?;
         loop {
             while let Some(event) = self.client.next_event() {
                 if let plugind::Event::Logged(plugind::Logged { line }) = event
@@ -44,7 +48,10 @@ impl Daemon {
                     print_line(&line);
                 }
             }
-            let mut fds = [rustix::event::PollFd::new(&self.client, rustix::event::PollFlags::IN)];
+            let mut fds = [rustix::event::PollFd::new(
+                &self.client,
+                rustix::event::PollFlags::IN,
+            )];
             rustix::event::poll(&mut fds, None)?;
             self.client.handle_readable()?;
         }

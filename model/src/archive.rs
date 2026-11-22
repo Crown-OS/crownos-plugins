@@ -66,7 +66,10 @@ mod tests {
         let dest = out.path().join("unpacked");
         unpack(&archive, &dest).expect("unpacks");
 
-        assert_eq!(Package::load(&dest).expect("loads").manifest, package.manifest);
+        assert_eq!(
+            Package::load(&dest).expect("loads").manifest,
+            package.manifest
+        );
         assert!(dest.join("main.luau").is_file());
     }
 }

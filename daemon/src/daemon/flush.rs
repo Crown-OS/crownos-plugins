@@ -3,7 +3,9 @@
 use std::time::Duration;
 
 use calloop::timer::{TimeoutAction, Timer};
-use crownplugin_proto::plugind::{BarChanged, EntitiesChanged, LauncherChanged, LockChanged, Logged, SearchAnswered};
+use crownplugin_proto::plugind::{
+    BarChanged, EntitiesChanged, LauncherChanged, LockChanged, Logged, SearchAnswered,
+};
 
 use super::{Daemon, Outbox};
 
@@ -16,12 +18,13 @@ impl Daemon {
             return;
         }
         self.outbox.scheduled = true;
-        let inserted = self
-            .handle
-            .insert_source(Timer::from_duration(FLUSH_DELAY), |_, _, daemon: &mut Daemon| {
+        let inserted = self.handle.insert_source(
+            Timer::from_duration(FLUSH_DELAY),
+            |_, _, daemon: &mut Daemon| {
                 daemon.flush();
                 TimeoutAction::Drop
-            });
+            },
+        );
         if inserted.is_err() {
             self.outbox.scheduled = false;
         }
@@ -38,7 +41,11 @@ impl Daemon {
         };
         if let Err(error) = link.push_lock(&self.surfaces, &self.registry, theme_dir.as_deref()) {
             match theme {
-                Some(theme) => self.log(&theme, crownplugin_proto::LogLevel::Error, format!("{error:#}")),
+                Some(theme) => self.log(
+                    &theme,
+                    crownplugin_proto::LogLevel::Error,
+                    format!("{error:#}"),
+                ),
                 None => tracing::warn!("{error:#}"),
             }
         }
@@ -59,7 +66,13 @@ impl Daemon {
     fn flush(&mut self) {
         self.outbox.scheduled = false;
         let answers = std::mem::take(&mut self.outbox.answers);
-        let outbox = std::mem::replace(&mut self.outbox, Outbox { answers, ..Outbox::default() });
+        let outbox = std::mem::replace(
+            &mut self.outbox,
+            Outbox {
+                answers,
+                ..Outbox::default()
+            },
+        );
         if outbox.lock && self.compositor.is_some() {
             self.push_lock();
         }
@@ -72,17 +85,25 @@ impl Daemon {
             }
         };
         if outbox.bar {
-            emit(ipc.emit(&BarChanged { snapshot: self.surfaces.bar() }));
+            emit(ipc.emit(&BarChanged {
+                snapshot: self.surfaces.bar(),
+            }));
         }
         if outbox.lock {
-            emit(ipc.emit(&LockChanged { snapshot: self.surfaces.lock() }));
+            emit(ipc.emit(&LockChanged {
+                snapshot: self.surfaces.lock(),
+            }));
         }
         if outbox.launcher {
-            emit(ipc.emit(&LauncherChanged { snapshot: self.surfaces.launcher() }));
+            emit(ipc.emit(&LauncherChanged {
+                snapshot: self.surfaces.launcher(),
+            }));
         }
         if outbox.entities {
             self.entities_revision += 1;
-            emit(ipc.emit(&EntitiesChanged { revision: self.entities_revision }));
+            emit(ipc.emit(&EntitiesChanged {
+                revision: self.entities_revision,
+            }));
         }
         for line in outbox.logs {
             emit(ipc.emit(&Logged { line }));

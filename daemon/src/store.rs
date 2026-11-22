@@ -81,7 +81,9 @@ impl Store {
 
     /// Drop everything recorded about an uninstalled entity.
     pub fn forget(&mut self, id: &EntityId) {
-        self.plugins.enabled.retain(|existing| existing != id.as_str());
+        self.plugins
+            .enabled
+            .retain(|existing| existing != id.as_str());
         self.plugins.grants.remove(id.as_str());
         if self.active_theme() == Some(id.as_str()) {
             self.plugins.active_theme = None;

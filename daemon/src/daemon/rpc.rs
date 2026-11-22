@@ -5,8 +5,8 @@ use crownos_ipc::RemoteError;
 use crownplugin_model::{Manifest, SettingValue};
 use crownplugin_proto::plugind::Handler;
 use crownplugin_proto::{
-    CapabilityInfo, EntityInfo, HitKey, Host, Kind, LauncherSnapshot, LogLine, Part, Snapshot, Source, SurfaceKey,
-    UiEvent,
+    CapabilityInfo, EntityInfo, HitKey, Host, Kind, LauncherSnapshot, LogLine, Part, Snapshot,
+    Source, SurfaceKey, UiEvent,
 };
 
 use super::{Daemon, Message};
@@ -71,7 +71,11 @@ impl Handler for Daemon {
     }
 
     fn ui_event(&mut self, surface: SurfaceKey, rev: u32, event: UiEvent) {
-        if self.surfaces.current_rev(&surface.plugin, &surface.widget, surface.part) != Some(rev) {
+        if self
+            .surfaces
+            .current_rev(&surface.plugin, &surface.widget, surface.part)
+            != Some(rev)
+        {
             return;
         }
         let _ = self.sender.send(Message::UiEvent {
@@ -111,7 +115,10 @@ impl Handler for Daemon {
         let asked: Vec<(String, String, String)> = self
             .registry
             .iter()
-            .filter(|entry| self.running.contains_key(entry.package.manifest.id().as_str()))
+            .filter(|entry| {
+                self.running
+                    .contains_key(entry.package.manifest.id().as_str())
+            })
             .filter_map(|entry| match &entry.package.manifest {
                 Manifest::Plugin(plugin) => Some(plugin),
                 Manifest::Theme(_) => None,
@@ -119,7 +126,8 @@ impl Handler for Daemon {
             .flat_map(|plugin| {
                 plugin.contributes.search.iter().filter_map(|provider| {
                     let asked = provider.accepts(&self.search_query)?;
-                    (!asked.is_empty()).then(|| (plugin.id.to_string(), provider.id.clone(), asked.to_owned()))
+                    (!asked.is_empty())
+                        .then(|| (plugin.id.to_string(), provider.id.clone(), asked.to_owned()))
                 })
             })
             .collect();
@@ -172,7 +180,12 @@ impl Handler for Daemon {
         Ok(())
     }
 
-    fn set_grant(&mut self, id: String, capability: String, decision: Option<Decision>) -> Result<(), RemoteError> {
+    fn set_grant(
+        &mut self,
+        id: String,
+        capability: String,
+        decision: Option<Decision>,
+    ) -> Result<(), RemoteError> {
         self.registry.get(&id).ok_or_else(|| not_found(&id))?;
         self.store.set_decision(&id, &capability, decision);
         self.restart_vm(&id);
@@ -189,10 +202,18 @@ impl Handler for Daemon {
         let Some(section) = &plugin.contributes.settings else {
             return Ok(Vec::new());
         };
-        Ok(section.resolve(&store::load_settings(&plugin.id)).into_iter().collect())
+        Ok(section
+            .resolve(&store::load_settings(&plugin.id))
+            .into_iter()
+            .collect())
     }
 
-    fn set_setting(&mut self, id: String, key: String, value: SettingValue) -> Result<(), RemoteError> {
+    fn set_setting(
+        &mut self,
+        id: String,
+        key: String,
+        value: SettingValue,
+    ) -> Result<(), RemoteError> {
         let entry = self.registry.get(&id).ok_or_else(|| not_found(&id))?;
         let Manifest::Plugin(plugin) = &entry.package.manifest else {
             return Err(RemoteError::handler("themes have no settings"));
@@ -202,9 +223,13 @@ impl Handler for Daemon {
             .settings
             .as_ref()
             .and_then(|section| section.field(&key))
-            .ok_or_else(|| RemoteError::handler(format!("`{key}` is not one of {id}'s settings")))?;
+            .ok_or_else(|| {
+                RemoteError::handler(format!("`{key}` is not one of {id}'s settings"))
+            })?;
         if !field.accepts(&value) {
-            return Err(RemoteError::handler(format!("{value:?} does not fit `{key}`")));
+            return Err(RemoteError::handler(format!(
+                "{value:?} does not fit `{key}`"
+            )));
         }
         let mut values = store::load_settings(&plugin.id);
         values.insert(key, value);
@@ -219,7 +244,8 @@ impl Handler for Daemon {
     }
 
     fn dev_load(&mut self, path: String) -> Result<String, RemoteError> {
-        self.dev_load_dir(std::path::Path::new(&path)).map_err(failed)
+        self.dev_load_dir(std::path::Path::new(&path))
+            .map_err(failed)
     }
 
     fn reload(&mut self, id: String) -> Result<(), RemoteError> {

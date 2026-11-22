@@ -17,7 +17,8 @@ fn field(table: &Table, key: &str) -> mlua::Result<Option<String>> {
 }
 
 fn hit(table: &Table) -> mlua::Result<SearchHit> {
-    let title = field(table, "title")?.ok_or_else(|| mlua::Error::runtime("a hit needs a `title`"))?;
+    let title =
+        field(table, "title")?.ok_or_else(|| mlua::Error::runtime("a hit needs a `title`"))?;
     Ok(SearchHit {
         id: field(table, "id")?.unwrap_or_else(|| title.clone()),
         subtitle: field(table, "subtitle")?.unwrap_or_default(),
@@ -26,9 +27,14 @@ fn hit(table: &Table) -> mlua::Result<SearchHit> {
     })
 }
 
-fn results(lua: &Lua, (provider, query, hits): (String, String, Option<Table>)) -> mlua::Result<()> {
+fn results(
+    lua: &Lua,
+    (provider, query, hits): (String, String, Option<Table>),
+) -> mlua::Result<()> {
     if !host(lua, |host| host.search_providers.contains(&provider))? {
-        return Err(mlua::Error::runtime(format!("`{provider}` is not declared in contributes.search")));
+        return Err(mlua::Error::runtime(format!(
+            "`{provider}` is not declared in contributes.search"
+        )));
     }
     let hits = match hits {
         Some(hits) => hits
@@ -38,7 +44,14 @@ fn results(lua: &Lua, (provider, query, hits): (String, String, Option<Table>)) 
             .collect::<mlua::Result<Vec<_>>>()?,
         None => Vec::new(),
     };
-    push(lua, Command::Answer { provider, query, hits })
+    push(
+        lua,
+        Command::Answer {
+            provider,
+            query,
+            hits,
+        },
+    )
 }
 
 pub fn install(lua: &Lua) -> mlua::Result<()> {

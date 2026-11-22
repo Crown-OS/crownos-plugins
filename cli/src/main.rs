@@ -18,7 +18,11 @@ use client::Daemon;
 use scaffold::Template;
 
 #[derive(Parser)]
-#[command(name = "crownplugin", version, about = "Create, check and manage CrownOS themes and plugins")]
+#[command(
+    name = "crownplugin",
+    version,
+    about = "Create, check and manage CrownOS themes and plugins"
+)]
 struct Cli {
     #[command(subcommand)]
     command: Command,
@@ -38,7 +42,9 @@ enum Command {
         dir: Option<PathBuf>,
     },
     /// Check a package folder; exits non-zero on any error.
-    Validate { dir: PathBuf },
+    Validate {
+        dir: PathBuf,
+    },
     /// Pack a folder into a .crownpkg.
     Pack {
         dir: PathBuf,
@@ -55,24 +61,42 @@ enum Command {
         #[arg(long)]
         enable: bool,
     },
-    Uninstall { id: String },
+    Uninstall {
+        id: String,
+    },
     /// Everything installed, with its state.
     List,
-    Enable { id: String },
-    Disable { id: String },
+    Enable {
+        id: String,
+    },
+    Disable {
+        id: String,
+    },
     /// Activate a theme, or `none` for the stock look.
-    Theme { id: String },
+    Theme {
+        id: String,
+    },
     /// Run a folder in place, reloading on every save and streaming its logs.
-    Dev { dir: PathBuf },
+    Dev {
+        dir: PathBuf,
+    },
     Logs {
         id: String,
         #[arg(short, long)]
         follow: bool,
     },
     /// Read or change a plugin setting.
-    Set { id: String, key: String, value: Option<String> },
+    Set {
+        id: String,
+        key: String,
+        value: Option<String>,
+    },
     /// Record a decision for a capability: allow, deny or ask.
-    Grant { id: String, capability: String, decision: String },
+    Grant {
+        id: String,
+        capability: String,
+        decision: String,
+    },
     /// Install the authoring skill for coding agents, or print the Luau API types.
     Skill {
         #[arg(long)]
@@ -84,17 +108,23 @@ fn parse_value(text: &str) -> SettingValue {
     match text {
         "true" => SettingValue::Bool(true),
         "false" => SettingValue::Bool(false),
-        _ => text
-            .parse::<f64>()
-            .map_or_else(|_| SettingValue::Text(text.to_owned()), SettingValue::Number),
+        _ => text.parse::<f64>().map_or_else(
+            |_| SettingValue::Text(text.to_owned()),
+            SettingValue::Number,
+        ),
     }
 }
 
 fn source(text: &str, rev: Option<String>) -> Result<Source> {
     if text.starts_with("https://") || text.starts_with("git@") {
-        return Ok(Source::Git { url: text.to_owned(), rev });
+        return Ok(Source::Git {
+            url: text.to_owned(),
+            rev,
+        });
     }
-    let path = Path::new(text).canonicalize().with_context(|| format!("{text} does not exist"))?;
+    let path = Path::new(text)
+        .canonicalize()
+        .with_context(|| format!("{text} does not exist"))?;
     Ok(Source::Path(path.to_string_lossy().into_owned()))
 }
 
@@ -131,7 +161,12 @@ fn kind_of(daemon: &mut Daemon, id: &str) -> Result<Kind> {
 
 fn run(command: Command) -> Result<ExitCode> {
     match command {
-        Command::New { kind, id, name, dir } => {
+        Command::New {
+            kind,
+            id,
+            name,
+            dir,
+        } => {
             let dir = scaffold::create(kind, &id, name.as_deref(), dir.as_deref())?;
             println!("created {}", dir.display());
             println!("next: crownplugin dev {}", dir.display());
@@ -152,12 +187,20 @@ fn run(command: Command) -> Result<ExitCode> {
             }
             let package = Package::load(&dir)?;
             let out = out.unwrap_or_else(|| {
-                PathBuf::from(format!("{}-{}.{EXTENSION}", package.id(), package.manifest.version()))
+                PathBuf::from(format!(
+                    "{}-{}.{EXTENSION}",
+                    package.id(),
+                    package.manifest.version()
+                ))
             });
             archive::pack(&package, &out)?;
             println!("wrote {}", out.display());
         }
-        Command::Install { source: text, rev, enable } => {
+        Command::Install {
+            source: text,
+            rev,
+            enable,
+        } => {
             let mut daemon = Daemon::connect()?;
             let pending = daemon.client().install(source(&text, rev)?);
             let id = daemon.wait(pending)?;
@@ -209,7 +252,10 @@ fn run(command: Command) -> Result<ExitCode> {
             let id = daemon.wait(pending)?;
             let kind = kind_of(&mut daemon, &id)?;
             activate(&mut daemon, &id, kind)?;
-            println!("running {id} from {}; edits reload it. Ctrl-C to stop.", dir.display());
+            println!(
+                "running {id} from {}; edits reload it. Ctrl-C to stop.",
+                dir.display()
+            );
             let pending = daemon.client().logs(id.clone());
             for line in daemon.wait(pending)? {
                 client::print_line(&line);
@@ -245,7 +291,11 @@ fn run(command: Command) -> Result<ExitCode> {
                 }
             }
         }
-        Command::Grant { id, capability, decision } => {
+        Command::Grant {
+            id,
+            capability,
+            decision,
+        } => {
             let decision = match decision.as_str() {
                 "allow" => Some(Decision::Granted),
                 "deny" => Some(Decision::Denied),

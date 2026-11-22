@@ -48,11 +48,19 @@ fn render(lua: &Lua, (widget, main, popup): (String, Value, Value)) -> mlua::Res
             Target::Bar | Target::Launcher => tree,
         };
         let command = match target {
-            Target::Launcher => Command::RenderTile { widget: widget.clone(), tree },
-            Target::Bar | Target::Lock => Command::Render { widget: widget.clone(), part, tree },
+            Target::Launcher => Command::RenderTile {
+                widget: widget.clone(),
+                tree,
+            },
+            Target::Bar | Target::Lock => Command::Render {
+                widget: widget.clone(),
+                part,
+                tree,
+            },
         };
         host(lua, |host| {
-            host.handlers.insert((widget.clone(), part), converter.handlers);
+            host.handlers
+                .insert((widget.clone(), part), converter.handlers);
             host.commands.push(command);
         })?;
     }
@@ -61,7 +69,9 @@ fn render(lua: &Lua, (widget, main, popup): (String, Value, Value)) -> mlua::Res
 
 fn lock_layout(lua: &Lua, value: Value) -> mlua::Result<()> {
     if !host(lua, |host| host.is_theme)? {
-        return Err(mlua::Error::runtime("only a theme can lay out the lock screen"));
+        return Err(mlua::Error::runtime(
+            "only a theme can lay out the lock screen",
+        ));
     }
     let tree = match value {
         Value::Nil => None,

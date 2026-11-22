@@ -125,7 +125,10 @@ pub struct HitKey {
 pub enum Source {
     /// A package folder or a `.crownpkg` file.
     Path(String),
-    Git { url: String, rev: Option<String> },
+    Git {
+        url: String,
+        rev: Option<String>,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

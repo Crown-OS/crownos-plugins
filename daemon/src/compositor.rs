@@ -1,18 +1,18 @@
 //! crownplugind's link to the compositor over `crownos_plugin_host_v1`.
 
 use std::collections::HashMap;
-use std::path::Path;
 use std::io::{Seek, SeekFrom, Write};
 use std::os::fd::{AsFd, OwnedFd};
+use std::path::Path;
 
 use anyhow::{Context, Result};
 use calloop::LoopHandle;
 use calloop_wayland_source::WaylandSource;
+use crownos_config::schema::LockSlotPosition;
 use crownos_protocols::plugin_host::v1::client::crownos_plugin_host_v1::{
     self, ActionResult, CrownosPluginHostV1, Watch,
 };
 use crownplugin_proto::LogLevel;
-use crownos_config::schema::LockSlotPosition;
 use crownplugin_view::Tree;
 use lockscene::LockScene;
 use wayland_client::globals::{GlobalListContents, registry_queue_init};
@@ -23,7 +23,6 @@ use crate::daemon::Daemon;
 use crate::lock_assets::LockAssets;
 use crate::registry::Registry;
 use crate::surfaces::Surfaces;
-
 
 pub struct Link {
     host: CrownosPluginHostV1,
@@ -79,7 +78,8 @@ impl Link {
 
     pub fn run_action(&mut self, plugin: &str, action: &str) {
         self.serial = self.serial.wrapping_add(1);
-        self.actions.insert(self.serial, (plugin.to_owned(), action.to_owned()));
+        self.actions
+            .insert(self.serial, (plugin.to_owned(), action.to_owned()));
         self.host.run_action(self.serial, action.to_owned());
         self.flush();
     }
@@ -96,10 +96,14 @@ impl Link {
         self.flush();
     }
 
-    fn put_assets(&mut self, wanted: &std::collections::BTreeSet<lockscene::AssetId>) -> Result<()> {
+    fn put_assets(
+        &mut self,
+        wanted: &std::collections::BTreeSet<lockscene::AssetId>,
+    ) -> Result<()> {
         for (id, bytes) in self.assets.missing(wanted) {
             let fd = memfd(&bytes)?;
-            self.host.put_lock_asset(id.clone(), fd.as_fd(), bytes.len() as u32);
+            self.host
+                .put_lock_asset(id.clone(), fd.as_fd(), bytes.len() as u32);
             self.assets.held(id);
         }
         Ok(())
@@ -114,14 +118,16 @@ impl Link {
         theme_dir: Option<&Path>,
     ) -> Result<()> {
         let scene = self.assets.scene(surfaces, registry, theme_dir);
-        lockscene::validate(scene.clone()).map_err(|error| anyhow::anyhow!("lock scene refused: {error}"))?;
+        lockscene::validate(scene.clone())
+            .map_err(|error| anyhow::anyhow!("lock scene refused: {error}"))?;
         let frame = scene.without_slots().encode()?;
         let placements: Vec<(&str, LockSlotPosition, [f32; 2])> = scene
             .slots
             .iter()
             .map(|slot| (slot.id.as_str(), slot.position, slot.offset))
             .collect();
-        let frame_hash = crate::util::hash::fnv1a(&[frame, format!("{placements:?}").into_bytes()].concat());
+        let frame_hash =
+            crate::util::hash::fnv1a(&[frame, format!("{placements:?}").into_bytes()].concat());
         if self.frame != Some(frame_hash) {
             let referenced = scene.referenced_assets();
             self.put_assets(&referenced)?;
@@ -130,7 +136,11 @@ impl Link {
             self.host.set_lock_scene(fd.as_fd(), bytes.len() as u32);
             self.assets.retain(&referenced);
             self.frame = Some(frame_hash);
-            self.sent = scene.slots.iter().map(|slot| (slot.id.clone(), slot.tree.rev)).collect();
+            self.sent = scene
+                .slots
+                .iter()
+                .map(|slot| (slot.id.clone(), slot.tree.rev))
+                .collect();
         } else {
             for slot in &scene.slots {
                 if self.sent.get(&slot.id) == Some(&slot.tree.rev) {
@@ -154,7 +164,8 @@ impl Link {
     fn send_slot(&self, id: &str, tree: &Tree) -> Result<()> {
         let bytes = crownos_ipc::postcard::to_stdvec(tree)?;
         let fd = memfd(&bytes)?;
-        self.host.set_lock_slot(id.to_owned(), fd.as_fd(), bytes.len() as u32);
+        self.host
+            .set_lock_slot(id.to_owned(), fd.as_fd(), bytes.len() as u32);
         Ok(())
     }
 }
@@ -203,7 +214,11 @@ impl Dispatch<CrownosPluginHostV1, ()> for Daemon {
                     let outcome = running.vm.action(&name);
                     daemon.after_call(&plugin, outcome);
                 } else {
-                    daemon.log(&plugin, LogLevel::Warn, format!("`{name}` fired but the plugin is not running"));
+                    daemon.log(
+                        &plugin,
+                        LogLevel::Warn,
+                        format!("`{name}` fired but the plugin is not running"),
+                    );
                 }
             }
             Event::LockState { locked } => {
@@ -212,11 +227,20 @@ impl Dispatch<CrownosPluginHostV1, ()> for Daemon {
                 }
                 daemon.broadcast("lock_state", locked != 0);
             }
-            Event::WorkspaceChanged { output, index } => daemon.broadcast("workspace_changed", (output, index)),
-            Event::WindowOpened { id, app_id, title, workspace } => {
+            Event::WorkspaceChanged { output, index } => {
+                daemon.broadcast("workspace_changed", (output, index))
+            }
+            Event::WindowOpened {
+                id,
+                app_id,
+                title,
+                workspace,
+            } => {
                 daemon.broadcast("window_opened", (id, app_id, title, workspace));
             }
-            Event::WindowChanged { id, app_id, title } => daemon.broadcast("window_changed", (id, app_id, title)),
+            Event::WindowChanged { id, app_id, title } => {
+                daemon.broadcast("window_changed", (id, app_id, title))
+            }
             Event::WindowClosed { id } => daemon.broadcast("window_closed", id),
             Event::WindowFocused { id } => daemon.broadcast("window_focused", id),
             _ => {}

@@ -28,9 +28,9 @@ impl Grants {
     }
 
     pub fn find(&self, matches: impl Fn(&Capability) -> bool) -> Option<&Capability> {
-        self.declared
-            .iter()
-            .find(|capability| matches(capability) && !self.denied.contains(capability.grant_key().as_ref()))
+        self.declared.iter().find(|capability| {
+            matches(capability) && !self.denied.contains(capability.grant_key().as_ref())
+        })
     }
 
     pub fn dirs(&self, write: bool) -> Vec<UserDir> {

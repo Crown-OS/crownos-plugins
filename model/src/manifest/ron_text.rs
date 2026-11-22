@@ -51,6 +51,9 @@ mod tests {
             ron::from_str(r#"{"accent": Blue, "blur_passes": 4}"#).expect("parses");
         assert_eq!(map["accent"].as_str(), "Blue");
         assert_eq!(map["blur_passes"].as_str(), "4");
-        assert_eq!(ron::to_string(&map).expect("serializes"), r#"{"accent":Blue,"blur_passes":4}"#);
+        assert_eq!(
+            ron::to_string(&map).expect("serializes"),
+            r#"{"accent":Blue,"blur_passes":4}"#
+        );
     }
 }

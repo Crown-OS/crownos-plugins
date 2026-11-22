@@ -70,9 +70,13 @@ fn main() -> Result<()> {
         None => builder.build(),
     }
     .context("binding the crownplugind socket")?;
-    let service = CalloopService::insert(&handle, server, |daemon: &mut Daemon, server, peer, message| {
-        plugind::dispatch(daemon, server, peer, message)
-    })?;
+    let service = CalloopService::insert(
+        &handle,
+        server,
+        |daemon: &mut Daemon, server, peer, message| {
+            plugind::dispatch(daemon, server, peer, message)
+        },
+    )?;
     daemon.ipc = Some(Rc::new(service));
     daemon.connect_compositor();
     daemon.recover();

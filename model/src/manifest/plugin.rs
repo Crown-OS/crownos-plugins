@@ -81,7 +81,11 @@ pub struct BarWidgetDecl {
 
 impl BarWidgetDecl {
     pub fn entry(&self, plugin: &EntityId) -> String {
-        format!("{}{plugin}/{}", crownos_config::schema::bar::PLUGIN_PREFIX, self.id)
+        format!(
+            "{}{plugin}/{}",
+            crownos_config::schema::bar::PLUGIN_PREFIX,
+            self.id
+        )
     }
 }
 
@@ -156,7 +160,8 @@ impl SearchProviderDecl {
             None => Some(query),
             Some(keyword) => {
                 let rest = query.strip_prefix(keyword.as_str())?;
-                rest.starts_with(char::is_whitespace).then(|| rest.trim_start())
+                rest.starts_with(char::is_whitespace)
+                    .then(|| rest.trim_start())
             }
         }
     }

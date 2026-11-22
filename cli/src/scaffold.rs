@@ -14,19 +14,38 @@ pub enum Template {
 }
 
 fn fill(template: &str, id: &EntityId, name: &str) -> String {
-    template.replace("{{id}}", id.as_str()).replace("{{name}}", name)
+    template
+        .replace("{{id}}", id.as_str())
+        .replace("{{name}}", name)
 }
 
-pub fn create(kind: Template, id: &str, name: Option<&str>, dir: Option<&Path>) -> Result<std::path::PathBuf> {
+pub fn create(
+    kind: Template,
+    id: &str,
+    name: Option<&str>,
+    dir: Option<&Path>,
+) -> Result<std::path::PathBuf> {
     let id = EntityId::new(id)?;
-    let name = name.map_or_else(|| id.as_str().rsplit('.').next().unwrap_or_default().to_owned(), str::to_owned);
+    let name = name.map_or_else(
+        || {
+            id.as_str()
+                .rsplit('.')
+                .next()
+                .unwrap_or_default()
+                .to_owned()
+        },
+        str::to_owned,
+    );
     let dir = dir.map_or_else(|| Path::new(id.as_str()).to_owned(), Path::to_owned);
     if dir.exists() && std::fs::read_dir(&dir)?.next().is_some() {
         bail!("{} already exists and is not empty", dir.display());
     }
     std::fs::create_dir_all(&dir).with_context(|| format!("creating {}", dir.display()))?;
     let files: &[(&str, &str)] = match kind {
-        Template::Plugin => &[("plugin.ron", PLUGIN_MANIFEST), ("main.luau", PLUGIN_SCRIPT)],
+        Template::Plugin => &[
+            ("plugin.ron", PLUGIN_MANIFEST),
+            ("main.luau", PLUGIN_SCRIPT),
+        ],
         Template::Theme => &[("theme.ron", THEME_MANIFEST)],
     };
     for (file, template) in files {

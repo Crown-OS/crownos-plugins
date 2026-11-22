@@ -29,13 +29,21 @@ fn fail(class: &str, reason: impl Into<String>) -> ClassError {
 }
 
 fn spacing(class: &str, value: &str) -> Result<f32, ClassError> {
-    let pixels = match value.strip_prefix('[').and_then(|rest| rest.strip_suffix(']')) {
+    let pixels = match value
+        .strip_prefix('[')
+        .and_then(|rest| rest.strip_suffix(']'))
+    {
         Some(arbitrary) => arbitrary.trim_end_matches("px").parse::<f32>().ok(),
         None => value.parse::<f32>().ok().map(|units| units * SPACING_UNIT),
     };
     pixels
         .filter(|pixels| pixels.is_finite() && *pixels >= 0.0)
-        .ok_or_else(|| fail(class, "expected a spacing step like `2` or pixels like `[10]`"))
+        .ok_or_else(|| {
+            fail(
+                class,
+                "expected a spacing step like `2` or pixels like `[10]`",
+            )
+        })
 }
 
 fn length(class: &str, value: &str) -> Result<Length, ClassError> {
@@ -134,7 +142,12 @@ fn parse_one(class: &str) -> Result<Style, ClassError> {
             "medium" => Weight::Medium,
             "semibold" => Weight::Semibold,
             "bold" => Weight::Bold,
-            _ => return Err(fail(class, "use font-light|normal|medium|semibold|bold|mono")),
+            _ => {
+                return Err(fail(
+                    class,
+                    "use font-light|normal|medium|semibold|bold|mono",
+                ));
+            }
         })),
         "opacity" => value
             .parse::<f32>()
@@ -180,8 +193,9 @@ mod tests {
 
     #[test]
     fn colors_are_tokens_and_sizes_are_not_confused_with_them() {
-        let styles = parse_class("bg-surface.raised text-text.primary text-sm border-surface.border")
-            .expect("valid");
+        let styles =
+            parse_class("bg-surface.raised text-text.primary text-sm border-surface.border")
+                .expect("valid");
         assert!(matches!(&styles[0], Style::Bg(token) if token.as_str() == "surface.raised"));
         assert!(matches!(&styles[1], Style::TextColor(token) if token.as_str() == "text.primary"));
         assert_eq!(styles[2], Style::TextSize(TextSize::Sm));

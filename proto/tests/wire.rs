@@ -29,11 +29,17 @@ fn entity_info_with_settings_survives_postcard() {
         }),
     };
     let bytes = postcard::to_stdvec(&info).expect("encodes");
-    assert_eq!(postcard::from_bytes::<EntityInfo>(&bytes).expect("decodes"), info);
+    assert_eq!(
+        postcard::from_bytes::<EntityInfo>(&bytes).expect("decodes"),
+        info
+    );
 
     let value = SettingValue::Number(2.5);
     let bytes = postcard::to_stdvec(&value).expect("encodes");
-    assert_eq!(postcard::from_bytes::<SettingValue>(&bytes).expect("decodes"), value);
+    assert_eq!(
+        postcard::from_bytes::<SettingValue>(&bytes).expect("decodes"),
+        value
+    );
 }
 
 #[test]
@@ -48,11 +54,17 @@ fn launcher_snapshots_and_search_results_survive_postcard() {
             plugin: "dev.test.quotes".into(),
             widget: "quote".into(),
             size: LauncherSize::Wide,
-            tree: Tree { rev: 1, root: Node::Spacer },
+            tree: Tree {
+                rev: 1,
+                root: Node::Spacer,
+            },
         }],
     };
     let bytes = postcard::to_stdvec(&snapshot).expect("encodes");
-    assert_eq!(postcard::from_bytes::<LauncherSnapshot>(&bytes).expect("decodes"), snapshot);
+    assert_eq!(
+        postcard::from_bytes::<LauncherSnapshot>(&bytes).expect("decodes"),
+        snapshot
+    );
     assert_eq!(snapshot.tiles[0].entry(), "plugin:dev.test.quotes/quote");
 
     let results = SearchResults {
@@ -68,5 +80,8 @@ fn launcher_snapshots_and_search_results_survive_postcard() {
         }],
     };
     let bytes = postcard::to_stdvec(&results).expect("encodes");
-    assert_eq!(postcard::from_bytes::<SearchResults>(&bytes).expect("decodes"), results);
+    assert_eq!(
+        postcard::from_bytes::<SearchResults>(&bytes).expect("decodes"),
+        results
+    );
 }

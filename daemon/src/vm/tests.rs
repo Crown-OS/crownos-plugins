@@ -37,9 +37,15 @@ fn global(vm: &Vm, name: &str) -> mlua::Value {
 
 #[test]
 fn a_runaway_loop_is_interrupted() {
-    let (_dir, mut vm, outcome) = start("return { actions = { spin = function() while true do end end } }", "", &[]);
+    let (_dir, mut vm, outcome) = start(
+        "return { actions = { spin = function() while true do end end } }",
+        "",
+        &[],
+    );
     assert!(matches!(outcome, Outcome::Ok));
-    assert!(matches!(vm.action("spin"), Outcome::Failed(message) if message.contains("time budget")));
+    assert!(
+        matches!(vm.action("spin"), Outcome::Failed(message) if message.contains("time budget"))
+    );
 }
 
 #[test]
@@ -54,7 +60,11 @@ fn a_memory_bomb_fails_without_taking_the_daemon_down() {
 
 #[test]
 fn three_failures_quarantine_the_vm() {
-    let (_dir, mut vm, _) = start("return { actions = { boom = function() error('no') end } }", "", &[]);
+    let (_dir, mut vm, _) = start(
+        "return { actions = { boom = function() error('no') end } }",
+        "",
+        &[],
+    );
     assert!(matches!(vm.action("boom"), Outcome::Failed(_)));
     assert!(matches!(vm.action("boom"), Outcome::Failed(_)));
     assert!(matches!(vm.action("boom"), Outcome::Quarantine(_)));
@@ -62,7 +72,11 @@ fn three_failures_quarantine_the_vm() {
 
 #[test]
 fn denied_and_undeclared_apis_do_not_exist() {
-    let (_dir, vm, _) = start("", r#"Network(hosts: ["example.com"]), Notify"#, &["network"]);
+    let (_dir, vm, _) = start(
+        "",
+        r#"Network(hosts: ["example.com"]), Notify"#,
+        &["network"],
+    );
     assert!(global(&vm, "http").is_nil(), "denied");
     assert!(!global(&vm, "notify").is_nil(), "declared and undecided");
     assert!(global(&vm, "exec").is_nil(), "never declared");
@@ -72,8 +86,15 @@ fn denied_and_undeclared_apis_do_not_exist() {
 #[test]
 fn the_sandbox_cannot_be_escaped_through_globals() {
     let (_dir, vm, outcome) = start("ui.render = nil", "", &[]);
-    assert!(matches!(outcome, Outcome::Failed(_)), "builtin tables are read-only");
-    let loaded: mlua::Value = vm.lua().load("return os.execute").eval().expect("evaluates");
+    assert!(
+        matches!(outcome, Outcome::Failed(_)),
+        "builtin tables are read-only"
+    );
+    let loaded: mlua::Value = vm
+        .lua()
+        .load("return os.execute")
+        .eval()
+        .expect("evaluates");
     assert!(loaded.is_nil());
 }
 
@@ -101,10 +122,11 @@ fn render_queues_a_tree_and_keeps_its_handlers() {
 
     let click = crownplugin_view::UiEvent::Click(crownplugin_view::NodeId(0));
     assert!(matches!(vm.ui_event("w", Part::Popup, &click), Outcome::Ok));
-    assert!(vm
-        .take_commands()
-        .iter()
-        .any(|command| matches!(command, Command::Log(_, message) if message == "clicked 1")));
+    assert!(
+        vm.take_commands()
+            .iter()
+            .any(|command| matches!(command, Command::Log(_, message) if message == "clicked 1"))
+    );
 }
 
 #[test]
@@ -120,7 +142,10 @@ fn lock_slots_never_carry_inputs() {
     let script = r#"ui.render("s", ui.vstack({}, { ui.text("hi"), ui.button({ label = "x" }) }))"#;
     let (_dir, vm, _) = start(script, "", &[]);
     let commands = vm.take_commands();
-    let Some(Command::Render { tree: Some(tree), .. }) = commands.first() else {
+    let Some(Command::Render {
+        tree: Some(tree), ..
+    }) = commands.first()
+    else {
         panic!("expected a render, got {commands:?}");
     };
     assert!(!tree.any(&Node::is_interactive));
@@ -130,10 +155,19 @@ fn lock_slots_never_carry_inputs() {
 fn timers_register_their_callbacks() {
     let (_dir, mut vm, _) = start("timer.every(10, function() log.info('tick') end)", "", &[]);
     let commands = vm.take_commands();
-    let Some(Command::Timer { id, every, repeat: true }) = commands.first() else {
+    let Some(Command::Timer {
+        id,
+        every,
+        repeat: true,
+    }) = commands.first()
+    else {
         panic!("expected a timer, got {commands:?}");
     };
-    assert_eq!(*every, std::time::Duration::from_millis(250), "clamped to the minimum");
+    assert_eq!(
+        *every,
+        std::time::Duration::from_millis(250),
+        "clamped to the minimum"
+    );
     assert!(matches!(vm.fire_timer(*id), Some(Outcome::Ok)));
 }
 
@@ -144,11 +178,26 @@ fn every_global_is_declared_in_the_type_definitions() {
         FsWrite(Music), Notify, CompositorActions, WindowFeed, ThemeVisual"#;
     let (_dir, vm, _) = start("", everything, &[]);
     let globals = [
-        "ui", "plugin", "log", "timer", "settings", "theme", "feed", "compositor", "config",
-        "wallpaper", "http", "exec", "fs", "notify",
+        "ui",
+        "plugin",
+        "log",
+        "timer",
+        "settings",
+        "theme",
+        "feed",
+        "compositor",
+        "config",
+        "wallpaper",
+        "http",
+        "exec",
+        "fs",
+        "notify",
     ];
     for name in globals {
-        assert!(TYPES.contains(&format!("declare {name}:")), "`{name}` is not declared");
+        assert!(
+            TYPES.contains(&format!("declare {name}:")),
+            "`{name}` is not declared"
+        );
         let table: mlua::Table = vm
             .lua()
             .globals()
@@ -174,7 +223,10 @@ fn launcher_vm(script: &str) -> (tempfile::TempDir, Vm, Outcome) {
     .expect("manifest");
     std::fs::write(dir.path().join("main.luau"), script).expect("script");
     let package = Package::load(dir.path()).expect("loads");
-    let grants = Grants { declared: package.manifest.capabilities(), denied: Default::default() };
+    let grants = Grants {
+        declared: package.manifest.capabilities(),
+        denied: Default::default(),
+    };
     let (vm, outcome) = Vm::start(&package, &grants, Seed::default()).expect("vm starts");
     (dir, vm, outcome)
 }
@@ -199,12 +251,22 @@ fn a_launcher_tile_renders_and_a_provider_answers_its_query() {
 
     assert!(matches!(vm.search("calc", "2+2"), Outcome::Ok));
     let commands = vm.take_commands();
-    let [Command::Answer { provider, query, hits }] = commands.as_slice() else {
+    let [
+        Command::Answer {
+            provider,
+            query,
+            hits,
+        },
+    ] = commands.as_slice()
+    else {
         panic!("expected one answer, got {commands:?}");
     };
     assert_eq!((provider.as_str(), query.as_str()), ("calc", "2+2"));
     assert_eq!(hits.len(), 1);
-    assert_eq!((hits[0].id.as_str(), hits[0].icon.as_deref()), ("4", Some("calculator")));
+    assert_eq!(
+        (hits[0].id.as_str(), hits[0].icon.as_deref()),
+        ("4", Some("calculator"))
+    );
 
     assert!(matches!(vm.activate("calc", "4"), Outcome::Ok));
     assert!(matches!(
@@ -217,5 +279,7 @@ fn a_launcher_tile_renders_and_a_provider_answers_its_query() {
 fn answering_for_an_undeclared_provider_fails() {
     let script = r#"return { on_search = function() launcher.results("web", "x", {}) end }"#;
     let (_dir, mut vm, _) = launcher_vm(script);
-    assert!(matches!(vm.search("calc", "x"), Outcome::Failed(message) if message.contains("contributes.search")));
+    assert!(
+        matches!(vm.search("calc", "x"), Outcome::Failed(message) if message.contains("contributes.search"))
+    );
 }

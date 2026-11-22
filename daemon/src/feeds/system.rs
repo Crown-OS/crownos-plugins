@@ -28,9 +28,14 @@ fn cpu_counters(stat: &str) -> Option<(u64, u64)> {
 }
 
 fn meminfo_kb(meminfo: &str, key: &str) -> Option<u64> {
-    meminfo
-        .lines()
-        .find_map(|line| line.strip_prefix(key)?.trim().strip_suffix("kB")?.trim().parse().ok())
+    meminfo.lines().find_map(|line| {
+        line.strip_prefix(key)?
+            .trim()
+            .strip_suffix("kB")?
+            .trim()
+            .parse()
+            .ok()
+    })
 }
 
 impl Sampler {
@@ -54,7 +59,11 @@ impl Sampler {
         let used = total.saturating_sub(available);
         SystemInfo {
             cpu: cpu.clamp(0.0, 1.0),
-            memory: if total == 0 { 0.0 } else { used as f64 / total as f64 },
+            memory: if total == 0 {
+                0.0
+            } else {
+                used as f64 / total as f64
+            },
             memory_used_mb: used / 1024,
             memory_total_mb: total / 1024,
             uptime_secs: uptime

@@ -22,7 +22,11 @@ pub struct Palette {
 
 impl Palette {
     /// A reactive color for `token`; the host's own tokens win over the kit's.
-    pub fn color(&self, token: &Token, fallback: fn(&Theme) -> Color) -> view::Bind<impl FnMut(&mut reactive::Runtime) -> Color + 'static> {
+    pub fn color(
+        &self,
+        token: &Token,
+        fallback: fn(&Theme) -> Color,
+    ) -> view::Bind<impl FnMut(&mut reactive::Runtime) -> Color + 'static> {
         let (theme, extra, name) = (self.theme, self.extra.clone(), token.as_str().to_owned());
         bind(move |runtime| {
             extra
@@ -65,7 +69,9 @@ pub fn apply<S: Styled>(mut element: S, styles: &[Style], palette: &Palette) -> 
             Style::MaxW(value) => element.max_w(*value),
             Style::Rounded(radius) => element.rounded(palette.radius(*radius)),
             Style::Bg(token) => element.bg(palette.color(token, |_| TRANSPARENT)),
-            Style::TextColor(token) => element.text_color(palette.color(token, |theme| theme.text.body)),
+            Style::TextColor(token) => {
+                element.text_color(palette.color(token, |theme| theme.text.body))
+            }
             Style::BorderColor(token) => {
                 element.border_color(palette.color(token, |theme| theme.surface.border))
             }

@@ -38,7 +38,12 @@ pub fn from_lua(value: Value) -> mlua::Result<SettingValue> {
 
 fn listen(lua: &Lua, event: &'static str) -> mlua::Result<Function> {
     lua.create_function(move |lua, callback: Function| {
-        host(lua, |host| host.listeners.entry(event.to_owned()).or_default().push(callback))
+        host(lua, |host| {
+            host.listeners
+                .entry(event.to_owned())
+                .or_default()
+                .push(callback)
+        })
     })
 }
 
@@ -52,7 +57,9 @@ fn install_log(lua: &Lua) -> mlua::Result<()> {
     ] {
         log.set(
             name,
-            lua.create_function(move |lua, message: String| push(lua, Command::Log(level, message)))?,
+            lua.create_function(move |lua, message: String| {
+                push(lua, Command::Log(level, message))
+            })?,
         )?;
     }
     lua.globals().set(
@@ -60,7 +67,11 @@ fn install_log(lua: &Lua) -> mlua::Result<()> {
         lua.create_function(|lua, values: mlua::Variadic<Value>| {
             let line: Vec<String> = values
                 .iter()
-                .map(|value| value.to_string().unwrap_or_else(|_| value.type_name().to_owned()))
+                .map(|value| {
+                    value
+                        .to_string()
+                        .unwrap_or_else(|_| value.type_name().to_owned())
+                })
                 .collect();
             push(lua, Command::Log(LogLevel::Info, line.join("\t")))
         })?,
@@ -103,7 +114,11 @@ fn install_require(lua: &Lua, package: &Package) -> mlua::Result<()> {
             if let Some(cached) = host(lua, |host| host.modules.get(&name).cloned())? {
                 return Ok(cached);
             }
-            let file = if name.ends_with(".luau") { name.clone() } else { format!("{name}.luau") };
+            let file = if name.ends_with(".luau") {
+                name.clone()
+            } else {
+                format!("{name}.luau")
+            };
             let path = relative_path(&file)
                 .map(|rel| dir.join(rel))
                 .ok_or_else(|| mlua::Error::runtime(format!("`{name}` is outside the package")))?;
@@ -151,7 +166,10 @@ fn install_settings(lua: &Lua) -> mlua::Result<()> {
 
 fn install_theme(lua: &Lua) -> mlua::Result<()> {
     let theme = namespace(lua, "theme")?;
-    theme.set("dark", lua.create_function(|lua, ()| host(lua, |host| host.dark_mode))?)?;
+    theme.set(
+        "dark",
+        lua.create_function(|lua, ()| host(lua, |host| host.dark_mode))?,
+    )?;
     theme.set(
         "token",
         lua.create_function(|lua, name: String| host(lua, |host| host.tokens.get(&name).cloned()))?,
@@ -177,7 +195,10 @@ fn install_feed(lua: &Lua) -> mlua::Result<()> {
             Ok(table)
         })?,
     )?;
-    feed.set("format", lua.create_function(|_, pattern: String| Ok(feeds::time::format(&pattern)))?)?;
+    feed.set(
+        "format",
+        lua.create_function(|_, pattern: String| Ok(feeds::time::format(&pattern)))?,
+    )?;
     feed.set(
         "system",
         lua.create_function(|lua, ()| {

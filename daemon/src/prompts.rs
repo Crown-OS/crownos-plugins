@@ -67,22 +67,24 @@ fn lower_first(text: &str) -> String {
 
 pub fn ask(sender: Sender<Message>, id: &str, name: &str, capability: &Capability) {
     let (entity, name, capability) = (id.to_owned(), name.to_owned(), capability.clone());
-    let spawned = std::thread::Builder::new().name("prompt".into()).spawn(move || {
-        let decision = match dialog(&entity, &name, &capability) {
-            Ok(0) => Some(Decision::Granted),
-            Ok(1) => Some(Decision::Denied),
-            Ok(_) => None,
-            Err(error) => {
-                tracing::warn!("cannot ask about {}: {error}", capability.grant_key());
-                None
-            }
-        };
-        let _ = sender.send(Message::Answered {
-            entity,
-            grant: capability.grant_key().into_owned(),
-            decision,
+    let spawned = std::thread::Builder::new()
+        .name("prompt".into())
+        .spawn(move || {
+            let decision = match dialog(&entity, &name, &capability) {
+                Ok(0) => Some(Decision::Granted),
+                Ok(1) => Some(Decision::Denied),
+                Ok(_) => None,
+                Err(error) => {
+                    tracing::warn!("cannot ask about {}: {error}", capability.grant_key());
+                    None
+                }
+            };
+            let _ = sender.send(Message::Answered {
+                entity,
+                grant: capability.grant_key().into_owned(),
+                decision,
+            });
         });
-    });
     if let Err(error) = spawned {
         tracing::warn!("cannot start a prompt: {error}");
     }

@@ -40,10 +40,15 @@ mod tests {
             ConfigAccess::Needs(Capability::StartupConfig)
         );
         assert_eq!(config_access("plugins", "enabled"), ConfigAccess::Forbidden);
-        assert_eq!(config_access("appearance", "blur_passes"), ConfigAccess::Visual);
+        assert_eq!(
+            config_access("appearance", "blur_passes"),
+            ConfigAccess::Visual
+        );
         assert_eq!(
             config_access("input", "natural_scroll"),
-            ConfigAccess::Needs(Capability::Config { section: "input".into() })
+            ConfigAccess::Needs(Capability::Config {
+                section: "input".into()
+            })
         );
         assert_eq!(config_access("nope", "x"), ConfigAccess::Forbidden);
     }

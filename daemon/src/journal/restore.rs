@@ -61,14 +61,30 @@ fn splice(journal: &Journal, others: &mut [Journal]) -> Result<()> {
 fn splice_one(theirs: &mut Op, mine: &Op) -> bool {
     match (theirs, mine) {
         (
-            Op::Set { section, key, before, .. },
-            Op::Set { section: my_section, key: my_key, before: my_before, after: my_after },
+            Op::Set {
+                section,
+                key,
+                before,
+                ..
+            },
+            Op::Set {
+                section: my_section,
+                key: my_key,
+                before: my_before,
+                after: my_after,
+            },
         ) if section == my_section && key == my_key && raw::same(before, my_after) => {
             *before = my_before.clone();
             true
         }
         (
-            Op::MapSet { section, key, entry, before, .. },
+            Op::MapSet {
+                section,
+                key,
+                entry,
+                before,
+                ..
+            },
             Op::MapSet {
                 section: my_section,
                 key: my_key,
@@ -79,7 +95,9 @@ fn splice_one(theirs: &mut Op, mine: &Op) -> bool {
         ) if section == my_section
             && key == my_key
             && entry == my_entry
-            && before.as_deref().is_some_and(|before| raw::same(before, my_after)) =>
+            && before
+                .as_deref()
+                .is_some_and(|before| raw::same(before, my_after)) =>
         {
             *before = my_before.clone();
             true
@@ -90,14 +108,25 @@ fn splice_one(theirs: &mut Op, mine: &Op) -> bool {
 
 fn undo(fields: &mut dyn DynSection, op: &Op) -> Result<(), PatchError> {
     match op {
-        Op::Set { key, before, after, .. } => {
+        Op::Set {
+            key, before, after, ..
+        } => {
             if raw::same(&fields.get_ron(key)?, after) {
                 fields.set_ron(key, before)?;
             }
         }
-        Op::MapSet { key, entry, before, after, .. } => {
+        Op::MapSet {
+            key,
+            entry,
+            before,
+            after,
+            ..
+        } => {
             let mut map = raw::parse_map(&fields.get_ron(key)?).map_err(patch_error)?;
-            if map.get(entry).is_some_and(|current| raw::same(current.get_ron(), after)) {
+            if map
+                .get(entry)
+                .is_some_and(|current| raw::same(current.get_ron(), after))
+            {
                 match before {
                     Some(before) => {
                         map.insert(entry.clone(), raw::raw(before).map_err(patch_error)?);

@@ -53,7 +53,9 @@ pub fn same(a: &str, b: &str) -> bool {
 }
 
 pub fn position(items: &[Box<RawValue>], item: &str) -> Option<usize> {
-    items.iter().position(|candidate| same(candidate.get_ron(), item))
+    items
+        .iter()
+        .position(|candidate| same(candidate.get_ron(), item))
 }
 
 #[cfg(test)]
@@ -65,7 +67,10 @@ mod tests {
         let mut items = parse_list(r#"[(app_id: Some("a"), floating: Some(true)), (title: "b")]"#)
             .expect("parses");
         items.remove(1);
-        assert_eq!(list_text(&items), r#"[(app_id: Some("a"), floating: Some(true))]"#);
+        assert_eq!(
+            list_text(&items),
+            r#"[(app_id: Some("a"), floating: Some(true))]"#
+        );
     }
 
     #[test]

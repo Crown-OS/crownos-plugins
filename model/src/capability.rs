@@ -73,17 +73,23 @@ pub enum Capability {
     /// Write look-only config: `appearance`, `theme`, `bar`, `lock`.
     ThemeVisual,
 
-    Network { hosts: Vec<String> },
+    Network {
+        hosts: Vec<String>,
+    },
     FsRead(UserDir),
     Notify,
     /// Write a behavioural config section that has no capability of its own.
-    Config { section: String },
+    Config {
+        section: String,
+    },
     /// Window app ids and titles.
     WindowFeed,
     WindowRules,
     CompositorActions,
 
-    Exec { programs: Vec<String> },
+    Exec {
+        programs: Vec<String>,
+    },
     FsWrite(UserDir),
     Keybinds,
     PowerConfig,
@@ -186,16 +192,25 @@ mod tests {
         assert_eq!(Capability::Feed(Feed::System).level(), Level::Safe);
         assert_eq!(Capability::Notify.level(), Level::Sensitive);
         assert_eq!(
-            Capability::Network { hosts: vec!["x.org".into()] }.level(),
+            Capability::Network {
+                hosts: vec!["x.org".into()]
+            }
+            .level(),
             Level::Sensitive
         );
-        assert_eq!(Capability::Exec { programs: vec![] }.level(), Level::Dangerous);
+        assert_eq!(
+            Capability::Exec { programs: vec![] }.level(),
+            Level::Dangerous
+        );
         assert_eq!(Capability::Keybinds.level(), Level::Dangerous);
     }
 
     #[test]
     fn grant_keys_are_distinct_per_scope() {
-        assert_eq!(Capability::FsRead(UserDir::Music).grant_key(), "fs_read.music");
+        assert_eq!(
+            Capability::FsRead(UserDir::Music).grant_key(),
+            "fs_read.music"
+        );
         assert_ne!(
             Capability::FsRead(UserDir::Music).grant_key(),
             Capability::FsWrite(UserDir::Music).grant_key()
@@ -204,9 +219,10 @@ mod tests {
 
     #[test]
     fn manifests_spell_capabilities_naturally() {
-        let caps: Vec<Capability> =
-            ron::from_str(r#"[Network(hosts: ["api.example.com"]), FsRead(Music), Notify, Feed(System)]"#)
-                .expect("parses");
+        let caps: Vec<Capability> = ron::from_str(
+            r#"[Network(hosts: ["api.example.com"]), FsRead(Music), Notify, Feed(System)]"#,
+        )
+        .expect("parses");
         assert_eq!(caps[1], Capability::FsRead(UserDir::Music));
     }
 }

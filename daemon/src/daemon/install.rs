@@ -35,10 +35,14 @@ fn fetch(source: &Source, staging: &Path) -> Result<PathBuf> {
     match source {
         Source::Path(path) => {
             let path = Path::new(path);
-            if path.extension().is_some_and(|extension| extension == EXTENSION) {
+            if path
+                .extension()
+                .is_some_and(|extension| extension == EXTENSION)
+            {
                 unpack(path, staging)?;
             } else {
-                fsx::copy_tree(path, staging).with_context(|| format!("copying {}", path.display()))?;
+                fsx::copy_tree(path, staging)
+                    .with_context(|| format!("copying {}", path.display()))?;
             }
         }
         Source::Git { url, rev } => {
@@ -74,13 +78,18 @@ impl Daemon {
             let package = checked(&dir)?;
             let id = package.id().clone();
             let kind = package.manifest.kind();
-            let was_active = self.running.contains_key(id.as_str()) || Journal::load(id.as_str()).is_some();
+            let was_active =
+                self.running.contains_key(id.as_str()) || Journal::load(id.as_str()).is_some();
             if was_active {
                 self.deactivate(id.as_str());
             }
             fsx::swap_in(&dir, &install_dir(kind, &id)).context("installing")?;
             self.registry.rescan();
-            self.log(id.as_str(), LogLevel::Info, format!("installed {}", package.manifest.version()));
+            self.log(
+                id.as_str(),
+                LogLevel::Info,
+                format!("installed {}", package.manifest.version()),
+            );
             self.reconcile();
             Ok(id.to_string())
         })();
@@ -89,7 +98,10 @@ impl Daemon {
     }
 
     pub fn uninstall_entity(&mut self, id: &str) -> Result<()> {
-        let entry = self.registry.get(id).with_context(|| format!("`{id}` is not installed"))?;
+        let entry = self
+            .registry
+            .get(id)
+            .with_context(|| format!("`{id}` is not installed"))?;
         if entry.package.system {
             bail!("`{id}` ships with the system and cannot be removed");
         }
@@ -109,7 +121,9 @@ impl Daemon {
 
     /// Load an unpacked package in place and follow its edits.
     pub fn dev_load_dir(&mut self, dir: &Path) -> Result<String> {
-        let dir = dir.canonicalize().with_context(|| format!("{} does not exist", dir.display()))?;
+        let dir = dir
+            .canonicalize()
+            .with_context(|| format!("{} does not exist", dir.display()))?;
         let package = checked(&dir)?;
         let id = self.registry.insert_dev(package).to_string();
         self.watches.dev(&id, &dir);

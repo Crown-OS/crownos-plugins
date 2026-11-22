@@ -23,7 +23,9 @@ fn allowed(dirs: &[UserDir], name: &str) -> mlua::Result<UserDir> {
     if dirs.contains(&dir) {
         Ok(dir)
     } else {
-        Err(mlua::Error::runtime(format!("no access to the {name} folder")))
+        Err(mlua::Error::runtime(format!(
+            "no access to the {name} folder"
+        )))
     }
 }
 
@@ -34,18 +36,30 @@ fn install_http(lua: &Lua) -> mlua::Result<()> {
         lua.create_function(|lua, (url, callback): (String, Option<Function>)| {
             host(lua, |host| {
                 let request = host.request(callback);
-                host.commands.push(Command::Http { request, method: Method::Get, url, body: None });
+                host.commands.push(Command::Http {
+                    request,
+                    method: Method::Get,
+                    url,
+                    body: None,
+                });
             })
         })?,
     )?;
     http.set(
         "post",
-        lua.create_function(|lua, (url, body, callback): (String, String, Option<Function>)| {
-            host(lua, |host| {
-                let request = host.request(callback);
-                host.commands.push(Command::Http { request, method: Method::Post, url, body: Some(body) });
-            })
-        })?,
+        lua.create_function(
+            |lua, (url, body, callback): (String, String, Option<Function>)| {
+                host(lua, |host| {
+                    let request = host.request(callback);
+                    host.commands.push(Command::Http {
+                        request,
+                        method: Method::Post,
+                        url,
+                        body: Some(body),
+                    });
+                })
+            },
+        )?,
     )
 }
 
@@ -71,23 +85,27 @@ fn install_fs(lua: &Lua, grants: &Grants) -> mlua::Result<()> {
     let listable = readable.clone();
     fs.set(
         "read",
-        lua.create_function(move |lua, (dir, path, callback): (String, String, Option<Function>)| {
-            let dir = allowed(&readable, &dir)?;
-            host(lua, |host| {
-                let request = host.request(callback);
-                host.commands.push(Command::ReadFile { request, dir, path });
-            })
-        })?,
+        lua.create_function(
+            move |lua, (dir, path, callback): (String, String, Option<Function>)| {
+                let dir = allowed(&readable, &dir)?;
+                host(lua, |host| {
+                    let request = host.request(callback);
+                    host.commands.push(Command::ReadFile { request, dir, path });
+                })
+            },
+        )?,
     )?;
     fs.set(
         "list",
-        lua.create_function(move |lua, (dir, path, callback): (String, String, Option<Function>)| {
-            let dir = allowed(&listable, &dir)?;
-            host(lua, |host| {
-                let request = host.request(callback);
-                host.commands.push(Command::ListDir { request, dir, path });
-            })
-        })?,
+        lua.create_function(
+            move |lua, (dir, path, callback): (String, String, Option<Function>)| {
+                let dir = allowed(&listable, &dir)?;
+                host(lua, |host| {
+                    let request = host.request(callback);
+                    host.commands.push(Command::ListDir { request, dir, path });
+                })
+            },
+        )?,
     )?;
     let writable = grants.dirs(true);
     if !writable.is_empty() {
@@ -114,16 +132,28 @@ fn install_notify(lua: &Lua) -> mlua::Result<()> {
         lua.create_function(|lua, options: Table| {
             let summary: String = options.get("summary")?;
             let body: Option<String> = options.get("body")?;
-            push(lua, Command::Notify { summary, body: body.unwrap_or_default() })
+            push(
+                lua,
+                Command::Notify {
+                    summary,
+                    body: body.unwrap_or_default(),
+                },
+            )
         })?,
     )
 }
 
 pub fn install(lua: &Lua, grants: &Grants) -> mlua::Result<()> {
-    if grants.find(|capability| matches!(capability, Capability::Network { .. })).is_some() {
+    if grants
+        .find(|capability| matches!(capability, Capability::Network { .. }))
+        .is_some()
+    {
         install_http(lua)?;
     }
-    if grants.find(|capability| matches!(capability, Capability::Exec { .. })).is_some() {
+    if grants
+        .find(|capability| matches!(capability, Capability::Exec { .. }))
+        .is_some()
+    {
         install_exec(lua)?;
     }
     if !grants.dirs(false).is_empty() || !grants.dirs(true).is_empty() {

@@ -51,7 +51,11 @@ pub enum Outcome {
 }
 
 impl Vm {
-    pub fn start(package: &Package, grants: &Grants, seed: Seed) -> anyhow::Result<(Self, Outcome)> {
+    pub fn start(
+        package: &Package,
+        grants: &Grants,
+        seed: Seed,
+    ) -> anyhow::Result<(Self, Outcome)> {
         let manifest = &package.manifest;
         let limits = match manifest {
             crownplugin_model::Manifest::Plugin(plugin) => plugin.limits,
@@ -191,7 +195,12 @@ impl Vm {
 
     /// Call every listener registered for `event`.
     pub fn emit<A: IntoLuaMulti + Clone>(&mut self, event: &str, args: A) -> Outcome {
-        let listeners = self.host().listeners.get(event).cloned().unwrap_or_default();
+        let listeners = self
+            .host()
+            .listeners
+            .get(event)
+            .cloned()
+            .unwrap_or_default();
         let mut outcome = Outcome::Ok;
         for listener in listeners {
             match self.call(&listener, args.clone()) {

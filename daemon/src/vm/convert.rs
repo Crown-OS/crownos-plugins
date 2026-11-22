@@ -90,9 +90,18 @@ impl Converter {
                     _ => Node::Card { style, children },
                 }
             }
-            "text" => Node::Text { style, text: string("text")? },
-            "icon" => Node::Icon { style, name: string("name")? },
-            "image" => Node::Image { style, src: string("src")? },
+            "text" => Node::Text {
+                style,
+                text: string("text")?,
+            },
+            "icon" => Node::Icon {
+                style,
+                name: string("name")?,
+            },
+            "image" => Node::Image {
+                style,
+                src: string("src")?,
+            },
             "spacer" => Node::Spacer,
             "divider" => Node::Divider,
             "badge" => Node::Badge {
@@ -107,7 +116,10 @@ impl Converter {
             },
             "progress" => Node::Progress {
                 style,
-                value: table.get::<Option<f32>>("value")?.unwrap_or(0.0).clamp(0.0, 1.0),
+                value: table
+                    .get::<Option<f32>>("value")?
+                    .unwrap_or(0.0)
+                    .clamp(0.0, 1.0),
             },
             "button" => Node::Button {
                 id: self.handler(&table, "on_click")?,
@@ -131,14 +143,22 @@ impl Converter {
                 let max = table.get::<Option<f32>>("max")?.unwrap_or(1.0).max(min);
                 Node::Slider {
                     id: self.handler(&table, "on_change")?,
-                    value: table.get::<Option<f32>>("value")?.unwrap_or(min).clamp(min, max),
+                    value: table
+                        .get::<Option<f32>>("value")?
+                        .unwrap_or(min)
+                        .clamp(min, max),
                     min,
                     max,
-                    step: table.get::<Option<f32>>("step")?.unwrap_or(0.01).max(f32::EPSILON),
+                    step: table
+                        .get::<Option<f32>>("step")?
+                        .unwrap_or(0.01)
+                        .max(f32::EPSILON),
                 }
             }
             "select" => {
-                let options: Vec<String> = table.get::<Option<Vec<String>>>("options")?.unwrap_or_default();
+                let options: Vec<String> = table
+                    .get::<Option<Vec<String>>>("options")?
+                    .unwrap_or_default();
                 let selected = table.get::<Option<u32>>("selected")?.unwrap_or(1).max(1) - 1;
                 Node::Select {
                     id: self.handler(&table, "on_change")?,
@@ -146,8 +166,14 @@ impl Converter {
                     options,
                 }
             }
-            "placeholder" if self.placeholders => Node::Placeholder { name: string("name")? },
-            "placeholder" => return Err(error("ui.placeholder is only valid in a lock-screen layout")),
+            "placeholder" if self.placeholders => Node::Placeholder {
+                name: string("name")?,
+            },
+            "placeholder" => {
+                return Err(error(
+                    "ui.placeholder is only valid in a lock-screen layout",
+                ));
+            }
             other => return Err(error(format!("unknown ui node kind `{other}`"))),
         })
     }

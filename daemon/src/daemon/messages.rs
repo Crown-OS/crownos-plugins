@@ -9,8 +9,15 @@ use super::Daemon;
 
 #[derive(Debug)]
 pub enum Completion {
-    Http { status: u16, body: String },
-    Exec { code: i32, stdout: String, stderr: String },
+    Http {
+        status: u16,
+        body: String,
+    },
+    Exec {
+        code: i32,
+        stdout: String,
+        stderr: String,
+    },
     Text(String),
     Entries(Vec<String>),
     Done,
@@ -26,14 +33,19 @@ impl Completion {
             }
             Ok(Value::Table(table))
         };
-        let string = |text: &str| -> mlua::Result<Value> { Ok(Value::String(lua.create_string(text)?)) };
+        let string =
+            |text: &str| -> mlua::Result<Value> { Ok(Value::String(lua.create_string(text)?)) };
         let value = match self {
             Self::Error(message) => return (Value::Nil, message).into_lua_multi(lua),
             Self::Http { status, body } => table(vec![
                 ("status", Value::Integer(i64::from(status))),
                 ("body", string(&body)?),
             ])?,
-            Self::Exec { code, stdout, stderr } => table(vec![
+            Self::Exec {
+                code,
+                stdout,
+                stderr,
+            } => table(vec![
                 ("code", Value::Integer(i64::from(code))),
                 ("stdout", string(&stdout)?),
                 ("stderr", string(&stderr)?),
@@ -48,19 +60,36 @@ impl Completion {
 
 #[derive(Debug)]
 pub enum Message {
-    Completed { entity: String, request: u32, completion: Completion },
-    Answered { entity: String, grant: String, decision: Option<Decision> },
+    Completed {
+        entity: String,
+        request: u32,
+        completion: Completion,
+    },
+    Answered {
+        entity: String,
+        grant: String,
+        decision: Option<Decision>,
+    },
     PluginsEdited(Plugins),
     ThemeChanged,
     SettingsEdited(String),
     DevChanged(String),
-    UiEvent { plugin: String, widget: String, part: Part, event: UiEvent },
+    UiEvent {
+        plugin: String,
+        widget: String,
+        part: Part,
+        event: UiEvent,
+    },
 }
 
 impl Daemon {
     pub fn handle(&mut self, message: Message) {
         match message {
-            Message::Completed { entity, request, completion } => {
+            Message::Completed {
+                entity,
+                request,
+                completion,
+            } => {
                 let Some(running) = self.running.get_mut(&entity) else {
                     return;
                 };
@@ -70,7 +99,11 @@ impl Daemon {
                 };
                 self.after_call(&entity, outcome);
             }
-            Message::Answered { entity, grant, decision } => self.answered(&entity, &grant, decision),
+            Message::Answered {
+                entity,
+                grant,
+                decision,
+            } => self.answered(&entity, &grant, decision),
             Message::PluginsEdited(plugins) => {
                 if plugins != *self.store.plugins() {
                     self.store.replace(plugins);
@@ -80,7 +113,12 @@ impl Daemon {
             Message::ThemeChanged => self.theme_changed(),
             Message::SettingsEdited(id) => self.settings_edited(&id),
             Message::DevChanged(id) => self.debounce_reload(id),
-            Message::UiEvent { plugin, widget, part, event } => {
+            Message::UiEvent {
+                plugin,
+                widget,
+                part,
+                event,
+            } => {
                 if let Some(running) = self.running.get_mut(&plugin) {
                     let outcome = running.vm.ui_event(&widget, part, &event);
                     self.after_call(&plugin, outcome);
@@ -94,11 +132,13 @@ impl Daemon {
             return;
         }
         let timer = calloop::timer::Timer::from_duration(std::time::Duration::from_millis(250));
-        let inserted = self.handle.insert_source(timer, move |_, _, daemon: &mut Daemon| {
-            daemon.dev_pending.remove(&id);
-            daemon.reload(&id);
-            calloop::timer::TimeoutAction::Drop
-        });
+        let inserted = self
+            .handle
+            .insert_source(timer, move |_, _, daemon: &mut Daemon| {
+                daemon.dev_pending.remove(&id);
+                daemon.reload(&id);
+                calloop::timer::TimeoutAction::Drop
+            });
         if let Err(error) = inserted {
             tracing::warn!("cannot schedule a reload: {error}");
         }

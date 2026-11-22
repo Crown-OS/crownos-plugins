@@ -18,10 +18,9 @@ impl EntityId {
         let id = id.into();
         let reason = if !(MIN_LEN..=MAX_LEN).contains(&id.len()) {
             Some("must be 3 to 64 characters")
-        } else if !id
-            .bytes()
-            .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || b".-_".contains(&byte))
-        {
+        } else if !id.bytes().all(|byte| {
+            byte.is_ascii_lowercase() || byte.is_ascii_digit() || b".-_".contains(&byte)
+        }) {
             Some("only a-z, 0-9, '.', '-' and '_' are allowed")
         } else if !id.contains('.') || id.starts_with('.') || id.ends_with('.') || id.contains("..")
         {
@@ -83,7 +82,15 @@ mod tests {
 
     #[test]
     fn unsafe_or_flat_ids_are_refused() {
-        for id in ["cpu", "Dev.Alice", "dev/alice", "../etc", ".dev.x", "dev..x", "a.b c"] {
+        for id in [
+            "cpu",
+            "Dev.Alice",
+            "dev/alice",
+            "../etc",
+            ".dev.x",
+            "dev..x",
+            "a.b c",
+        ] {
             assert!(EntityId::new(id).is_err(), "{id} should be refused");
         }
     }

@@ -19,7 +19,10 @@ fn luau_files(dir: &Path, found: &mut Vec<std::path::PathBuf>) {
         let path = entry.path();
         if path.is_dir() {
             luau_files(&path, found);
-        } else if path.extension().is_some_and(|extension| extension == "luau") {
+        } else if path
+            .extension()
+            .is_some_and(|extension| extension == "luau")
+        {
             found.push(path);
         }
     }
@@ -29,7 +32,10 @@ pub fn check(dir: &Path) -> Result<Findings> {
     let package = match Package::load(dir) {
         Ok(package) => package,
         Err(error) => {
-            return Ok(Findings { errors: vec![error.to_string()], warnings: Vec::new() });
+            return Ok(Findings {
+                errors: vec![error.to_string()],
+                warnings: Vec::new(),
+            });
         }
     };
     let report = validate(&package);
@@ -40,8 +46,16 @@ pub fn check(dir: &Path) -> Result<Findings> {
     let lua = mlua::Lua::new();
     for script in scripts {
         let source = std::fs::read_to_string(&script)?;
-        let name = script.strip_prefix(dir).unwrap_or(&script).display().to_string();
-        if let Err(error) = lua.load(source).set_name(format!("@{name}")).into_function() {
+        let name = script
+            .strip_prefix(dir)
+            .unwrap_or(&script)
+            .display()
+            .to_string();
+        if let Err(error) = lua
+            .load(source)
+            .set_name(format!("@{name}"))
+            .into_function()
+        {
             errors.push(error.to_string());
         }
     }

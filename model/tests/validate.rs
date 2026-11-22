@@ -20,7 +20,11 @@ fn package(files: &[(&str, &str)]) -> (tempfile::TempDir, Package) {
 }
 
 fn errors(package: &Package) -> Vec<String> {
-    validate(package).errors.iter().map(ToString::to_string).collect()
+    validate(package)
+        .errors
+        .iter()
+        .map(ToString::to_string)
+        .collect()
 }
 
 #[test]
@@ -83,9 +87,11 @@ fn a_plugin_must_declare_what_its_config_needs() {
         ),
         ("main.luau", "return {}"),
     ]);
-    assert!(errors(&package)
-        .iter()
-        .any(|error| error.contains("StartupConfig")));
+    assert!(
+        errors(&package)
+            .iter()
+            .any(|error| error.contains("StartupConfig"))
+    );
 }
 
 #[test]
@@ -108,13 +114,21 @@ fn plugin_settings_defaults_must_fit_their_field() {
         ("main.luau", "return {}"),
     ]);
     let errors = errors(&package);
-    assert!(errors.iter().any(|error| error.starts_with("contributes.bar[1].id")));
-    assert!(errors
-        .iter()
-        .any(|error| error.starts_with("contributes.settings.fields[0]")));
-    assert!(!errors
-        .iter()
-        .any(|error| error.starts_with("contributes.settings.fields[1]")));
+    assert!(
+        errors
+            .iter()
+            .any(|error| error.starts_with("contributes.bar[1].id"))
+    );
+    assert!(
+        errors
+            .iter()
+            .any(|error| error.starts_with("contributes.settings.fields[0]"))
+    );
+    assert!(
+        !errors
+            .iter()
+            .any(|error| error.starts_with("contributes.settings.fields[1]"))
+    );
 }
 
 #[test]
@@ -123,7 +137,11 @@ fn a_missing_entry_script_is_an_error() {
         "plugin.ron",
         r#"Plugin(id: "dev.test.none", name: "None", version: "0.1.0")"#,
     )]);
-    assert!(errors(&package).iter().any(|error| error.starts_with("script")));
+    assert!(
+        errors(&package)
+            .iter()
+            .any(|error| error.starts_with("script"))
+    );
 }
 
 #[test]
@@ -149,7 +167,10 @@ fn launcher_tiles_and_search_providers_validate() {
     let errors = errors(&package);
     let has = |at: &str| errors.iter().any(|error| error.starts_with(at));
     assert!(!has("contributes.launcher[0]"), "{errors:?}");
-    assert!(has("contributes.launcher[1].id"), "a tile may not share a bar widget's id");
+    assert!(
+        has("contributes.launcher[1].id"),
+        "a tile may not share a bar widget's id"
+    );
     assert!(has("contributes.launcher[2].id"));
     assert!(!has("contributes.search[0]"));
     assert!(has("contributes.search[1].id") && has("contributes.search[1].name"));

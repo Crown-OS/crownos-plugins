@@ -53,14 +53,24 @@ fn install(id: &EntityId, dir: &Path) -> Result<()> {
     }
     remove(id)?;
     let dest = Path::new(SYSTEM_THEME_ASSETS).join(id.as_str());
-    if let Some(system) = theme.assets.system.as_deref().and_then(|rel| package.resolve(rel)) {
+    if let Some(system) = theme
+        .assets
+        .system
+        .as_deref()
+        .and_then(|rel| package.resolve(rel))
+    {
         copy_regular(&system, &dest)?;
         let fonts = dest.join("fonts");
         if fonts.is_dir() {
             std::os::unix::fs::symlink(&fonts, Path::new(FONTS).join(format!("crownos-{id}")))?;
         }
     }
-    if let Some(cursors) = theme.assets.cursors.as_deref().and_then(|rel| package.resolve(rel)) {
+    if let Some(cursors) = theme
+        .assets
+        .cursors
+        .as_deref()
+        .and_then(|rel| package.resolve(rel))
+    {
         let name = cursors.file_name().context("cursor theme without a name")?;
         let target = Path::new(ICONS).join(name);
         if target.exists() && !target.join(marker(id)).exists() {
@@ -95,7 +105,9 @@ fn remove(id: &EntityId) -> Result<()> {
 fn main() -> Result<()> {
     let args: Vec<String> = std::env::args().skip(1).collect();
     match args.as_slice() {
-        [verb, id, dir] if verb == "install" => install(&EntityId::new(id.as_str())?, Path::new(dir)),
+        [verb, id, dir] if verb == "install" => {
+            install(&EntityId::new(id.as_str())?, Path::new(dir))
+        }
         [verb, id] if verb == "remove" => {
             caller_uid()?;
             remove(&EntityId::new(id.as_str())?)

@@ -10,7 +10,11 @@ fn every_example_validates() {
     let examples = Path::new(env!("CARGO_MANIFEST_DIR")).join("../examples");
     for entry in std::fs::read_dir(examples).expect("examples") {
         let dir = entry.expect("entry").path();
-        let output = crownplugin().arg("validate").arg(&dir).output().expect("runs");
+        let output = crownplugin()
+            .arg("validate")
+            .arg(&dir)
+            .output()
+            .expect("runs");
         assert!(
             output.status.success(),
             "{}:\n{}",
@@ -23,12 +27,27 @@ fn every_example_validates() {
 #[test]
 fn fresh_templates_validate() {
     let root = tempfile::tempdir().expect("tempdir");
-    for (kind, id) in [("plugin", "dev.test.fresh-plugin"), ("theme", "dev.test.fresh-theme")] {
+    for (kind, id) in [
+        ("plugin", "dev.test.fresh-plugin"),
+        ("theme", "dev.test.fresh-theme"),
+    ] {
         let dir = root.path().join(id);
-        let created = crownplugin().args(["new", kind, id, "--dir"]).arg(&dir).status().expect("runs");
+        let created = crownplugin()
+            .args(["new", kind, id, "--dir"])
+            .arg(&dir)
+            .status()
+            .expect("runs");
         assert!(created.success());
-        let output = crownplugin().arg("validate").arg(&dir).output().expect("runs");
-        assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+        let output = crownplugin()
+            .arg("validate")
+            .arg(&dir)
+            .output()
+            .expect("runs");
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
     }
 }
 
@@ -41,7 +60,11 @@ fn errors_point_at_the_field_and_fail_the_command() {
     )
     .expect("write");
     std::fs::write(root.path().join("main.luau"), "local x = = 1").expect("write");
-    let output = crownplugin().arg("validate").arg(root.path()).output().expect("runs");
+    let output = crownplugin()
+        .arg("validate")
+        .arg(root.path())
+        .output()
+        .expect("runs");
     let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(!output.status.success());
     assert!(stderr.contains("error: version"), "{stderr}");

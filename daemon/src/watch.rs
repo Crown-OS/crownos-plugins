@@ -47,16 +47,21 @@ impl Watches {
     pub fn settings(&self, id: &EntityId) -> Option<Subscription> {
         let sender = self.sender.clone();
         let owned = id.to_string();
-        Some(crownos_config::subscribe(&id.settings_section(), move |_| {
-            let _ = sender.send(Message::SettingsEdited(owned.clone()));
-        }))
+        Some(crownos_config::subscribe(
+            &id.settings_section(),
+            move |_| {
+                let _ = sender.send(Message::SettingsEdited(owned.clone()));
+            },
+        ))
     }
 
     pub fn dev(&mut self, id: &str, dir: &Path) {
         let sender = self.sender.clone();
         let owned = id.to_owned();
         let watcher = notify::recommended_watcher(move |event: notify::Result<notify::Event>| {
-            if event.is_ok_and(|event| event.kind.is_modify() || event.kind.is_create() || event.kind.is_remove()) {
+            if event.is_ok_and(|event| {
+                event.kind.is_modify() || event.kind.is_create() || event.kind.is_remove()
+            }) {
                 let _ = sender.send(Message::DevChanged(owned.clone()));
             }
         });

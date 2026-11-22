@@ -31,13 +31,31 @@ fn tree() -> Tree {
                 Node::HStack {
                     style: parse_class("gap-1 items-center").expect("valid"),
                     children: vec![
-                        Node::Icon { style: parse_class("text-sm text-text.muted").expect("valid"), name: "cpu".into() },
-                        Node::Text { style: parse_class("font-semibold").expect("valid"), text: "CPU 42%".into() },
+                        Node::Icon {
+                            style: parse_class("text-sm text-text.muted").expect("valid"),
+                            name: "cpu".into(),
+                        },
+                        Node::Text {
+                            style: parse_class("font-semibold").expect("valid"),
+                            text: "CPU 42%".into(),
+                        },
                     ],
                 },
-                Node::Placeholder { name: "lock.clock".into() },
-                Node::Button { id: NodeId(0), style: Vec::new(), label: "Refresh".into(), icon: Some("refresh-cw".into()), variant: ButtonVariant::Primary },
-                Node::Toggle { id: NodeId(1), label: "Graph".into(), on: false },
+                Node::Placeholder {
+                    name: "lock.clock".into(),
+                },
+                Node::Button {
+                    id: NodeId(0),
+                    style: Vec::new(),
+                    label: "Refresh".into(),
+                    icon: Some("refresh-cw".into()),
+                    variant: ButtonVariant::Primary,
+                },
+                Node::Toggle {
+                    id: NodeId(1),
+                    label: "Graph".into(),
+                    on: false,
+                },
             ],
         },
     }
@@ -65,5 +83,8 @@ fn interactions_come_back_as_ui_events() {
     app.click(role(Role::Button).name("Refresh"));
     app.click(role(Role::Switch).name("Graph"));
     app.settle();
-    assert_eq!(*events.borrow(), vec![UiEvent::Click(NodeId(0)), UiEvent::Toggle(NodeId(1), true)]);
+    assert_eq!(
+        *events.borrow(),
+        vec![UiEvent::Click(NodeId(0)), UiEvent::Toggle(NodeId(1), true)]
+    );
 }

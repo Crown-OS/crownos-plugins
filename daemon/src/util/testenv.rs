@@ -21,7 +21,10 @@ impl TestEnv {
             std::env::set_var(DATA_DIR_ENV, root.path().join("data"));
             std::env::set_var(STATE_DIR_ENV, root.path().join("state"));
         }
-        Self { root, _guard: guard }
+        Self {
+            root,
+            _guard: guard,
+        }
     }
 
     pub fn config(&self, section: &str) -> String {

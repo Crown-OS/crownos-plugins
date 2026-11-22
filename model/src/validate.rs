@@ -9,8 +9,8 @@ use crownos_config::schema::theme::{is_color_token, parse_hex};
 
 use crate::manifest::ConfigPatch;
 use crate::{
-    API_VERSION, Capability, ConfigAccess, Field, Manifest, Package, PluginManifest,
-    ThemeManifest, config_access,
+    API_VERSION, Capability, ConfigAccess, Field, Manifest, Package, PluginManifest, ThemeManifest,
+    config_access,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -51,14 +51,20 @@ pub fn validate(package: &Package) -> Report {
     if manifest.api() != API_VERSION {
         report.error(
             "api",
-            format!("this CrownOS understands api {API_VERSION}, not {}", manifest.api()),
+            format!(
+                "this CrownOS understands api {API_VERSION}, not {}",
+                manifest.api()
+            ),
         );
     }
     if manifest.name().trim().is_empty() {
         report.error("name", "must not be empty");
     }
     if manifest.version().split('.').count() != 3
-        || manifest.version().split('.').any(|part| part.parse::<u32>().is_err())
+        || manifest
+            .version()
+            .split('.')
+            .any(|part| part.parse::<u32>().is_err())
     {
         report.error("version", "must be semver like `1.0.0`");
     }
@@ -92,10 +98,7 @@ fn check_config(report: &mut Report, at: &str, patch: &ConfigPatch, declared: &[
                     continue;
                 }
                 ConfigAccess::Needs(capability) if !declared.contains(&capability) => {
-                    report.error(
-                        &at,
-                        format!("needs `{capability:?}` in capabilities"),
-                    );
+                    report.error(&at, format!("needs `{capability:?}` in capabilities"));
                 }
                 _ => {}
             }
@@ -116,7 +119,10 @@ fn check_colors(
             report.error(format!("{at}.{token}"), "not a theme color token");
         }
         if parse_hex(hex).is_none() {
-            report.error(format!("{at}.{token}"), format!("`{hex}` is not #rrggbb or #rrggbbaa"));
+            report.error(
+                format!("{at}.{token}"),
+                format!("`{hex}` is not #rrggbb or #rrggbbaa"),
+            );
         }
     }
 }
@@ -127,7 +133,10 @@ fn check_theme(package: &Package, report: &mut Report, theme: &ThemeManifest) {
     if let Some(accent) = &theme.tokens.accent
         && (parse_hex(&accent.start).is_none() || parse_hex(&accent.end).is_none())
     {
-        report.error("tokens.accent", "start and end must be #rrggbb or #rrggbbaa");
+        report.error(
+            "tokens.accent",
+            "start and end must be #rrggbb or #rrggbbaa",
+        );
     }
     if let Some(wallpaper) = &theme.wallpaper {
         for (mode, path) in [("light", &wallpaper.light), ("dark", &wallpaper.dark)] {
@@ -152,9 +161,14 @@ fn check_theme(package: &Package, report: &mut Report, theme: &ThemeManifest) {
     }
     if let Some(lock) = &theme.lock {
         match &lock.background {
-            Some(LockBackground::Image(path)) => check_file(package, report, "lock.background", path),
+            Some(LockBackground::Image(path)) => {
+                check_file(package, report, "lock.background", path)
+            }
             Some(LockBackground::Token(token)) if !is_color_token(token) => {
-                report.error("lock.background", format!("`{token}` is not a theme color token"));
+                report.error(
+                    "lock.background",
+                    format!("`{token}` is not a theme color token"),
+                );
             }
             _ => {}
         }
@@ -169,16 +183,25 @@ fn check_plugin(report: &mut Report, plugin: &PluginManifest) {
     let mut widget_ids = BTreeSet::new();
     for (index, widget) in contributes.bar.iter().enumerate() {
         if !is_plain_id(&widget.id) {
-            report.error(format!("contributes.bar[{index}].id"), "use a-z, 0-9 and '-'");
+            report.error(
+                format!("contributes.bar[{index}].id"),
+                "use a-z, 0-9 and '-'",
+            );
         }
         if !widget_ids.insert(widget.id.as_str()) {
-            report.error(format!("contributes.bar[{index}].id"), "duplicate widget id");
+            report.error(
+                format!("contributes.bar[{index}].id"),
+                "duplicate widget id",
+            );
         }
     }
     let mut slot_ids = BTreeSet::new();
     for (index, slot) in contributes.lock.iter().enumerate() {
         if !is_plain_id(&slot.id) || !slot_ids.insert(slot.id.as_str()) {
-            report.error(format!("contributes.lock[{index}].id"), "must be unique, a-z, 0-9 and '-'");
+            report.error(
+                format!("contributes.lock[{index}].id"),
+                "must be unique, a-z, 0-9 and '-'",
+            );
         }
     }
     for (index, widget) in contributes.launcher.iter().enumerate() {
@@ -208,7 +231,10 @@ fn check_plugin(report: &mut Report, plugin: &PluginManifest) {
     }
     for (index, keybind) in contributes.keybinds.iter().enumerate() {
         if keybind.keys.trim().is_empty() {
-            report.error(format!("contributes.keybinds[{index}].keys"), "must not be empty");
+            report.error(
+                format!("contributes.keybinds[{index}].keys"),
+                "must not be empty",
+            );
         }
         if !is_plain_id(&keybind.action) {
             report.error(
@@ -225,7 +251,10 @@ fn check_plugin(report: &mut Report, plugin: &PluginManifest) {
                 report.error(&at, format!("duplicate key `{}`", field.key()));
             }
             if !field.accepts(&field.default_value()) {
-                report.error(&at, "default does not fit the field (range, options or token)");
+                report.error(
+                    &at,
+                    "default does not fit the field (range, options or token)",
+                );
             }
             if let Field::Slider { step, .. } = field
                 && *step <= 0.0

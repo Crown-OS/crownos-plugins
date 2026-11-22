@@ -9,13 +9,12 @@ mod types;
 
 pub use types::{
     CapabilityInfo, EntityInfo, EntityStatus, HitKey, Host, LauncherSnapshot, LauncherSurface,
-    LogLevel, LogLine, Part, RemoteSurface, SearchHit, SearchResults, Snapshot, Source,
-    SurfaceKey,
+    LogLevel, LogLine, Part, RemoteSurface, SearchHit, SearchResults, Snapshot, Source, SurfaceKey,
 };
 
+pub use crownos_config::schema::Decision;
 pub use crownplugin_model::settings::{SettingValue, SettingsSection};
 pub use crownplugin_model::{Kind, LauncherSize, Level, LockSlotPosition};
-pub use crownos_config::schema::Decision;
 pub use crownplugin_view::{Node, NodeId, Tree, UiEvent};
 
 crownos_ipc::protocol! {

@@ -71,7 +71,10 @@ impl Daemon {
         }
         for id in &desired {
             if !self.running.contains_key(id)
-                && self.registry.get(id).is_some_and(|entry| entry.status == EntityStatus::Inactive)
+                && self
+                    .registry
+                    .get(id)
+                    .is_some_and(|entry| entry.status == EntityStatus::Inactive)
             {
                 self.start_vm(id);
             }
@@ -91,7 +94,8 @@ impl Daemon {
                 Manifest::Plugin(plugin) => changes::plugin_changes(plugin)?,
             };
             self.apply_changes(id, changes)?;
-            if matches!(&package.manifest, Manifest::Theme(theme) if !theme.assets.fonts.is_empty()) {
+            if matches!(&package.manifest, Manifest::Theme(theme) if !theme.assets.fonts.is_empty())
+            {
                 refresh_font_cache();
             }
             Ok(warnings)
@@ -124,7 +128,9 @@ impl Daemon {
         let dir = self.registry.get(id).map(|entry| entry.package.dir.clone());
         let mut journal = Journal::load(id).unwrap_or_else(|| Journal::new(id));
         let mut system = |install: bool| {
-            let dir = dir.as_deref().ok_or_else(|| anyhow!("{id} is not installed"))?;
+            let dir = dir
+                .as_deref()
+                .ok_or_else(|| anyhow!("{id} is not installed"))?;
             system::spawn(install, id, dir);
             Ok(())
         };
@@ -194,7 +200,11 @@ impl Daemon {
                 let settings_watch = self.watches.settings(package.id());
                 self.running.insert(
                     id.to_owned(),
-                    Running { vm, timers: HashMap::new(), _settings_watch: settings_watch },
+                    Running {
+                        vm,
+                        timers: HashMap::new(),
+                        _settings_watch: settings_watch,
+                    },
                 );
                 self.set_status(id, EntityStatus::Running);
                 self.after_call(id, outcome);
@@ -234,7 +244,11 @@ impl Daemon {
             Outcome::Ok => {}
             Outcome::Failed(message) => self.log(id, LogLevel::Error, message),
             Outcome::Quarantine(message) => {
-                self.log(id, LogLevel::Error, format!("{message}; stopped after repeated failures"));
+                self.log(
+                    id,
+                    LogLevel::Error,
+                    format!("{message}; stopped after repeated failures"),
+                );
                 self.stop_vm(id);
                 self.set_status(id, EntityStatus::Quarantined(message));
                 return;

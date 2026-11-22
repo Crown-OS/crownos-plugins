@@ -149,7 +149,10 @@ impl SettingsSection {
     }
 
     /// Every field at its default, overlaid with `stored` values that still fit.
-    pub fn resolve(&self, stored: &BTreeMap<String, SettingValue>) -> BTreeMap<String, SettingValue> {
+    pub fn resolve(
+        &self,
+        stored: &BTreeMap<String, SettingValue>,
+    ) -> BTreeMap<String, SettingValue> {
         self.fields
             .iter()
             .map(|field| {
@@ -286,7 +289,10 @@ mod tests {
             fields: vec![slider()],
         };
         let stored = BTreeMap::from([("interval".to_owned(), SettingValue::Number(99.0))]);
-        assert_eq!(section.resolve(&stored)["interval"], SettingValue::Number(2.0));
+        assert_eq!(
+            section.resolve(&stored)["interval"],
+            SettingValue::Number(2.0)
+        );
         assert!(!slider().accepts(&SettingValue::Bool(true)));
     }
 }

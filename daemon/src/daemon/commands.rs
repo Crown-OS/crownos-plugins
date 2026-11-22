@@ -56,9 +56,18 @@ impl Daemon {
         }
     }
 
-    fn gated(&mut self, id: &str, capability: Option<Capability>, command: Command) -> Option<Command> {
+    fn gated(
+        &mut self,
+        id: &str,
+        capability: Option<Capability>,
+        command: Command,
+    ) -> Option<Command> {
         let Some(capability) = capability else {
-            self.fail(id, &command, "the manifest does not declare this capability");
+            self.fail(
+                id,
+                &command,
+                "the manifest does not declare this capability",
+            );
             return None;
         };
         match self.permit(id, &capability) {
@@ -88,7 +97,12 @@ impl Daemon {
             _ => None,
         };
         match request {
-            Some(request) => workers::complete(&self.sender, id, request, Completion::Error(reason.to_owned())),
+            Some(request) => workers::complete(
+                &self.sender,
+                id,
+                request,
+                Completion::Error(reason.to_owned()),
+            ),
             None => self.log(id, LogLevel::Warn, format!("{reason}: {command:?}")),
         }
     }
@@ -97,16 +111,28 @@ impl Daemon {
         match command {
             Command::Render { widget, part, tree } => self.render(id, &widget, part, tree),
             Command::RenderTile { widget, tree } => self.render_tile(id, &widget, tree),
-            Command::Answer { provider, query, hits } => self.answer(id, provider, query, hits),
+            Command::Answer {
+                provider,
+                query,
+                hits,
+            } => self.answer(id, provider, query, hits),
             Command::LockDecoration(tree) => {
                 if self.store.active_theme() == Some(id) && self.surfaces.set_lock_layout(tree) {
                     self.outbox.lock = true;
                     self.schedule_flush();
                 }
             }
-            Command::Timer { id: timer, every, repeat } => self.start_timer(id, timer, every, repeat),
+            Command::Timer {
+                id: timer,
+                every,
+                repeat,
+            } => self.start_timer(id, timer, every, repeat),
             Command::CancelTimer(timer) => {
-                if let Some(token) = self.running.get_mut(id).and_then(|running| running.timers.remove(&timer)) {
+                if let Some(token) = self
+                    .running
+                    .get_mut(id)
+                    .and_then(|running| running.timers.remove(&timer))
+                {
                     self.handle.remove(token);
                 }
             }
@@ -116,14 +142,29 @@ impl Daemon {
                     Some(Capability::Network { hosts }) => hosts.clone(),
                     _ => Vec::new(),
                 };
-                if let Some(Command::Http { request, method, url, body }) = self.gated(id, capability, command) {
+                if let Some(Command::Http {
+                    request,
+                    method,
+                    url,
+                    body,
+                }) = self.gated(id, capability, command)
+                {
                     match workers::host_allowed(&url, &hosts) {
-                        true => workers::http(self.sender.clone(), id, request, method == Method::Post, url, body),
+                        true => workers::http(
+                            self.sender.clone(),
+                            id,
+                            request,
+                            method == Method::Post,
+                            url,
+                            body,
+                        ),
                         false => workers::complete(
                             &self.sender,
                             id,
                             request,
-                            Completion::Error(format!("{url} is not in the manifest's network hosts")),
+                            Completion::Error(format!(
+                                "{url} is not in the manifest's network hosts"
+                            )),
                         ),
                     }
                 }
@@ -142,7 +183,10 @@ impl Daemon {
                             &self.sender,
                             id,
                             request,
-                            Completion::Error(format!("{} is not in the manifest's programs", argv[0])),
+                            Completion::Error(format!(
+                                "{} is not in the manifest's programs",
+                                argv[0]
+                            )),
                         );
                     }
                 }
@@ -161,7 +205,8 @@ impl Daemon {
             }
             Command::Notify { .. } => {
                 let capability = self.declared(id, |c| *c == Capability::Notify);
-                if let Some(Command::Notify { summary, body }) = self.gated(id, capability, command) {
+                if let Some(Command::Notify { summary, body }) = self.gated(id, capability, command)
+                {
                     let app = self
                         .registry
                         .get(id)
@@ -194,19 +239,42 @@ impl Daemon {
                     self.after_call(id, outcome);
                 }
             }
-            Command::SetConfig { ref section, ref key, .. } => {
+            Command::SetConfig {
+                ref section,
+                ref key,
+                ..
+            } => {
                 let capability = match config_access(section, key) {
                     ConfigAccess::Visual => self.declared(id, |c| *c == Capability::ThemeVisual),
                     ConfigAccess::Needs(needed) => self.declared(id, |c| *c == needed),
                     ConfigAccess::Forbidden => None,
                 };
-                if let Some(Command::SetConfig { section, key, value }) = self.gated(id, capability, command) {
-                    self.change(id, Change::Set { section, key, value });
+                if let Some(Command::SetConfig {
+                    section,
+                    key,
+                    value,
+                }) = self.gated(id, capability, command)
+                {
+                    self.change(
+                        id,
+                        Change::Set {
+                            section,
+                            key,
+                            value,
+                        },
+                    );
                 }
             }
             Command::SetWallpaper(path) => {
                 let value = ron::to_string(&path.to_string_lossy()).unwrap_or_default();
-                self.change(id, Change::Set { section: "appearance".into(), key: "wallpaper".into(), value });
+                self.change(
+                    id,
+                    Change::Set {
+                        section: "appearance".into(),
+                        key: "wallpaper".into(),
+                        value,
+                    },
+                );
             }
             Command::SetSetting { key, value } => self.set_setting_from_script(id, key, value),
             Command::Log(level, message) => self.log(id, level, message),
@@ -219,20 +287,30 @@ impl Daemon {
         }
     }
 
-    fn render(&mut self, id: &str, widget: &str, part: crownplugin_proto::Part, tree: Option<crownplugin_view::Node>) {
-        let lock = self.registry.get(id).and_then(|entry| match &entry.package.manifest {
-            Manifest::Plugin(plugin) => plugin
-                .contributes
-                .lock
-                .iter()
-                .find(|slot| slot.id == widget)
-                .map(|slot| slot.slot),
-            Manifest::Theme(_) => None,
-        });
+    fn render(
+        &mut self,
+        id: &str,
+        widget: &str,
+        part: crownplugin_proto::Part,
+        tree: Option<crownplugin_view::Node>,
+    ) {
+        let lock = self
+            .registry
+            .get(id)
+            .and_then(|entry| match &entry.package.manifest {
+                Manifest::Plugin(plugin) => plugin
+                    .contributes
+                    .lock
+                    .iter()
+                    .find(|slot| slot.id == widget)
+                    .map(|slot| slot.slot),
+                Manifest::Theme(_) => None,
+            });
         let entry_name = format!("plugin:{id}/{widget}");
         let lock = lock.map(|default| {
             let lock: crownos_config::Lock = crownos_config::load("lock");
-            lock.slot_placement(&entry_name).map_or(default, |placement| placement.position)
+            lock.slot_placement(&entry_name)
+                .map_or(default, |placement| placement.position)
         });
         match self.surfaces.render(id, widget, part, tree, lock) {
             Ok(Changed::Bar) => self.outbox.bar = true,
@@ -247,15 +325,18 @@ impl Daemon {
     }
 
     fn render_tile(&mut self, id: &str, widget: &str, tree: Option<crownplugin_view::Node>) {
-        let size = self.registry.get(id).and_then(|entry| match &entry.package.manifest {
-            Manifest::Plugin(plugin) => plugin
-                .contributes
-                .launcher
-                .iter()
-                .find(|tile| tile.id == widget)
-                .map(|tile| tile.size),
-            Manifest::Theme(_) => None,
-        });
+        let size = self
+            .registry
+            .get(id)
+            .and_then(|entry| match &entry.package.manifest {
+                Manifest::Plugin(plugin) => plugin
+                    .contributes
+                    .launcher
+                    .iter()
+                    .find(|tile| tile.id == widget)
+                    .map(|tile| tile.size),
+                Manifest::Theme(_) => None,
+            });
         let Some(size) = size else {
             return;
         };
@@ -270,11 +351,24 @@ impl Daemon {
     }
 
     /// Hits skip the frame batching: the launcher is waiting on them as the user types.
-    fn answer(&mut self, id: &str, provider: String, query: String, hits: Vec<crownplugin_proto::SearchHit>) {
-        let declared = self.registry.get(id).and_then(|entry| match &entry.package.manifest {
-            Manifest::Plugin(plugin) => plugin.contributes.search.iter().find(|declared| declared.id == provider),
-            Manifest::Theme(_) => None,
-        });
+    fn answer(
+        &mut self,
+        id: &str,
+        provider: String,
+        query: String,
+        hits: Vec<crownplugin_proto::SearchHit>,
+    ) {
+        let declared = self
+            .registry
+            .get(id)
+            .and_then(|entry| match &entry.package.manifest {
+                Manifest::Plugin(plugin) => plugin
+                    .contributes
+                    .search
+                    .iter()
+                    .find(|declared| declared.id == provider),
+                Manifest::Theme(_) => None,
+            });
         let Some(declared) = declared else {
             return;
         };
@@ -283,7 +377,13 @@ impl Daemon {
         }
         let name = declared.name.clone();
         let query = self.search_query.clone();
-        let results = crownplugin_proto::SearchResults { plugin: id.to_owned(), provider, name, query, hits };
+        let results = crownplugin_proto::SearchResults {
+            plugin: id.to_owned(),
+            provider,
+            name,
+            query,
+            hits,
+        };
         if self.outbox.answers.is_empty() {
             self.handle.insert_idle(Daemon::send_answers);
         }
@@ -292,29 +392,32 @@ impl Daemon {
 
     fn start_timer(&mut self, id: &str, timer: u32, every: Duration, repeat: bool) {
         let entity = id.to_owned();
-        let inserted = self.handle.insert_source(Timer::from_duration(every), move |_, _, daemon: &mut Daemon| {
-            let Some(running) = daemon.running.get_mut(&entity) else {
-                return TimeoutAction::Drop;
-            };
-            let Some(outcome) = running.vm.fire_timer(timer) else {
-                running.timers.remove(&timer);
-                return TimeoutAction::Drop;
-            };
-            daemon.after_call(&entity, outcome);
-            let alive = daemon
-                .running
-                .get(&entity)
-                .is_some_and(|running| running.timers.contains_key(&timer));
-            if repeat && alive {
-                TimeoutAction::ToDuration(every)
-            } else {
-                if let Some(running) = daemon.running.get_mut(&entity) {
+        let inserted = self.handle.insert_source(
+            Timer::from_duration(every),
+            move |_, _, daemon: &mut Daemon| {
+                let Some(running) = daemon.running.get_mut(&entity) else {
+                    return TimeoutAction::Drop;
+                };
+                let Some(outcome) = running.vm.fire_timer(timer) else {
                     running.timers.remove(&timer);
-                    running.vm.host().timers.remove(&timer);
+                    return TimeoutAction::Drop;
+                };
+                daemon.after_call(&entity, outcome);
+                let alive = daemon
+                    .running
+                    .get(&entity)
+                    .is_some_and(|running| running.timers.contains_key(&timer));
+                if repeat && alive {
+                    TimeoutAction::ToDuration(every)
+                } else {
+                    if let Some(running) = daemon.running.get_mut(&entity) {
+                        running.timers.remove(&timer);
+                        running.vm.host().timers.remove(&timer);
+                    }
+                    TimeoutAction::Drop
                 }
-                TimeoutAction::Drop
-            }
-        });
+            },
+        );
         match (inserted, self.running.get_mut(id)) {
             (Ok(token), Some(running)) => {
                 running.timers.insert(timer, token);
@@ -324,7 +427,12 @@ impl Daemon {
         }
     }
 
-    fn set_setting_from_script(&mut self, id: &str, key: String, value: crownplugin_model::SettingValue) {
+    fn set_setting_from_script(
+        &mut self,
+        id: &str,
+        key: String,
+        value: crownplugin_model::SettingValue,
+    ) {
         let Some(entry) = self.registry.get(id) else {
             return;
         };
@@ -338,14 +446,25 @@ impl Daemon {
 
     /// The union of what every running script wants to hear from the compositor.
     pub fn update_watch(&mut self) {
-        let (windows, workspaces) = self.running.values().fold((false, false), |(windows, workspaces), running| {
-            let host = running.vm.host();
-            let has = |name: &str| host.listeners.contains_key(name);
-            (
-                windows || ["window_opened", "window_changed", "window_closed", "window_focused"].iter().any(|name| has(name)),
-                workspaces || has("workspace_changed"),
-            )
-        });
+        let (windows, workspaces) =
+            self.running
+                .values()
+                .fold((false, false), |(windows, workspaces), running| {
+                    let host = running.vm.host();
+                    let has = |name: &str| host.listeners.contains_key(name);
+                    (
+                        windows
+                            || [
+                                "window_opened",
+                                "window_changed",
+                                "window_closed",
+                                "window_focused",
+                            ]
+                            .iter()
+                            .any(|name| has(name)),
+                        workspaces || has("workspace_changed"),
+                    )
+                });
         if let Some(link) = self.compositor.as_mut() {
             link.watch(windows, workspaces);
         }

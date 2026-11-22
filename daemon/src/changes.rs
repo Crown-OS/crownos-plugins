@@ -30,7 +30,9 @@ fn config_changes(patch: &crownplugin_model::ConfigPatch) -> impl Iterator<Item 
 }
 
 fn home_dir(sub: &str) -> PathBuf {
-    dirs::data_dir().unwrap_or_else(|| PathBuf::from(".")).join(sub)
+    dirs::data_dir()
+        .unwrap_or_else(|| PathBuf::from("."))
+        .join(sub)
 }
 
 fn dir_name(path: &Path) -> String {
@@ -46,7 +48,9 @@ pub fn theme_dark_mode(theme: &ThemeManifest) -> bool {
         .get("appearance")
         .and_then(|keys| keys.get("dark_mode"))
         .and_then(|value| value.as_str().parse::<bool>().ok())
-        .unwrap_or_else(|| crownos_config::load::<crownos_config::Appearance>("appearance").dark_mode)
+        .unwrap_or_else(|| {
+            crownos_config::load::<crownos_config::Appearance>("appearance").dark_mode
+        })
 }
 
 pub fn theme_changes(package: &Package, theme: &ThemeManifest) -> Result<Vec<Change>> {
@@ -79,7 +83,11 @@ pub fn theme_changes(package: &Package, theme: &ThemeManifest) -> Result<Vec<Cha
         .and_then(|wallpaper| wallpaper.for_mode(dark_mode))
         .and_then(|rel| package.resolve(rel))
     {
-        changes.push(set("appearance", "wallpaper", ron(&path.to_string_lossy())?));
+        changes.push(set(
+            "appearance",
+            "wallpaper",
+            ron(&path.to_string_lossy())?,
+        ));
     }
 
     if let Some(lock) = &theme.lock {
@@ -96,8 +104,14 @@ pub fn theme_changes(package: &Package, theme: &ThemeManifest) -> Result<Vec<Cha
             changes.push(set("lock", "background", ron(&background)?));
         }
         let optional: [(&str, Option<String>); 5] = [
-            ("time_format", lock.time_format.as_ref().map(ron).transpose()?),
-            ("date_format", lock.date_format.as_ref().map(ron).transpose()?),
+            (
+                "time_format",
+                lock.time_format.as_ref().map(ron).transpose()?,
+            ),
+            (
+                "date_format",
+                lock.date_format.as_ref().map(ron).transpose()?,
+            ),
             ("dim", lock.dim.map(|v| ron(&v)).transpose()?),
             ("auth_field", lock.auth_field.map(|v| ron(&v)).transpose()?),
             ("show_user", lock.show_user.map(|v| ron(&v)).transpose()?),
@@ -118,7 +132,11 @@ pub fn theme_changes(package: &Package, theme: &ThemeManifest) -> Result<Vec<Cha
         });
         changes.push(set("appearance", "icon_theme", ron(&name)?));
     }
-    if let Some(cursors) = assets.cursors.as_deref().and_then(|rel| package.resolve(rel)) {
+    if let Some(cursors) = assets
+        .cursors
+        .as_deref()
+        .and_then(|rel| package.resolve(rel))
+    {
         let name = dir_name(&cursors);
         changes.push(Change::Link {
             path: home_dir("icons").join(&name),
@@ -134,7 +152,11 @@ pub fn theme_changes(package: &Package, theme: &ThemeManifest) -> Result<Vec<Cha
             });
         }
     }
-    if let Some(sounds) = assets.sounds.as_deref().and_then(|rel| package.resolve(rel)) {
+    if let Some(sounds) = assets
+        .sounds
+        .as_deref()
+        .and_then(|rel| package.resolve(rel))
+    {
         changes.push(Change::Link {
             path: home_dir("sounds").join(dir_name(&sounds)),
             target: sounds,
@@ -186,10 +208,14 @@ pub fn plugin_changes(plugin: &PluginManifest) -> Result<(Vec<Change>, Vec<Strin
     for widget in &plugin.contributes.bar {
         let entry = ron(&widget.entry(&plugin.id))?;
         let replaced = widget.replaces.as_deref().and_then(|builtin| {
-            [("left", &bar.left), ("center", &bar.center), ("right", &bar.right)]
-                .into_iter()
-                .find(|(_, items)| items.iter().any(|item| item == builtin))
-                .map(|(key, _)| (key, builtin))
+            [
+                ("left", &bar.left),
+                ("center", &bar.center),
+                ("right", &bar.right),
+            ]
+            .into_iter()
+            .find(|(_, items)| items.iter().any(|item| item == builtin))
+            .map(|(key, _)| (key, builtin))
         });
         changes.push(match replaced {
             Some((key, builtin)) => Change::Replace {
@@ -222,7 +248,10 @@ pub fn plugin_changes(plugin: &PluginManifest) -> Result<(Vec<Change>, Vec<Strin
             .iter()
             .any(|binding| same_chord(&binding.keys, &keybind.keys) && binding.action != action);
         if taken {
-            warnings.push(format!("{} is already bound; not taking it over", keybind.keys));
+            warnings.push(format!(
+                "{} is already bound; not taking it over",
+                keybind.keys
+            ));
             continue;
         }
         changes.push(Change::Insert {

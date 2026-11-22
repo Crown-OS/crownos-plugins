@@ -34,7 +34,8 @@ impl LockAssets {
             Some((when, len, id)) if *when == modified && *len == meta.len() => id.clone(),
             _ => {
                 let id = format!("{:x}", Sha256::digest(std::fs::read(path).ok()?));
-                self.hashed.insert(path.to_owned(), (modified, meta.len(), id.clone()));
+                self.hashed
+                    .insert(path.to_owned(), (modified, meta.len(), id.clone()));
                 id
             }
         };
@@ -43,7 +44,10 @@ impl LockAssets {
     }
 
     /// Bytes for each of `ids` the compositor does not hold yet.
-    pub fn missing<'a>(&self, ids: impl IntoIterator<Item = &'a AssetId>) -> Vec<(String, Vec<u8>)> {
+    pub fn missing<'a>(
+        &self,
+        ids: impl IntoIterator<Item = &'a AssetId>,
+    ) -> Vec<(String, Vec<u8>)> {
         ids.into_iter()
             .filter(|id| !self.held.contains(id.as_str()))
             .filter_map(|id| {
@@ -59,7 +63,8 @@ impl LockAssets {
 
     /// A new scene replaced the old one; the compositor keeps only what it references.
     pub fn retain(&mut self, referenced: &BTreeSet<AssetId>) {
-        self.held.retain(|id| referenced.iter().any(|kept| kept.as_str() == id));
+        self.held
+            .retain(|id| referenced.iter().any(|kept| kept.as_str() == id));
     }
 }
 
@@ -91,7 +96,12 @@ impl LockAssets {
 
     /// The lock scene for the current settings, theme and plugin slots, with
     /// every image already named by its asset id.
-    pub fn scene(&mut self, surfaces: &Surfaces, registry: &Registry, theme_dir: Option<&Path>) -> LockScene {
+    pub fn scene(
+        &mut self,
+        surfaces: &Surfaces,
+        registry: &Registry,
+        theme_dir: Option<&Path>,
+    ) -> LockScene {
         let mut lock: Lock = crownos_config::load_strict(Lock::SECTION).unwrap_or_default();
         let theme: Theme = crownos_config::load_strict(Theme::SECTION).unwrap_or_default();
         if let LockBackground::Image(path) = &lock.background
@@ -111,7 +121,9 @@ impl LockAssets {
             .into_iter()
             .filter_map(|surface| {
                 let mut tree = surface.main?;
-                let dir = registry.get(&surface.plugin).map(|entry| entry.package.dir.clone());
+                let dir = registry
+                    .get(&surface.plugin)
+                    .map(|entry| entry.package.dir.clone());
                 self.rewrite_images(&mut tree.root, dir.as_deref());
                 Some((
                     format!("plugin:{}/{}", surface.plugin, surface.widget),
@@ -138,7 +150,10 @@ mod tests {
         std::fs::write(&picture, b"not really a png").expect("write");
         crownos_config::write_keys(
             "lock",
-            [("background", format!("Image({:?})", picture.display().to_string()).as_str())],
+            [(
+                "background",
+                format!("Image({:?})", picture.display().to_string()).as_str(),
+            )],
         )
         .expect("lock.ron");
 
@@ -146,18 +161,33 @@ mod tests {
         let slot = Node::VStack {
             style: Vec::new(),
             children: vec![
-                Node::Text { style: Vec::new(), text: "Good morning".into() },
-                Node::Image { style: Vec::new(), src: "missing.png".into() },
+                Node::Text {
+                    style: Vec::new(),
+                    text: "Good morning".into(),
+                },
+                Node::Image {
+                    style: Vec::new(),
+                    src: "missing.png".into(),
+                },
             ],
         };
         surfaces
-            .render("dev.a.greeting", "hello", Part::Main, Some(slot), Some(LockSlotPosition::BelowClock))
+            .render(
+                "dev.a.greeting",
+                "hello",
+                Part::Main,
+                Some(slot),
+                Some(LockSlotPosition::BelowClock),
+            )
             .expect("fits");
 
         let mut assets = LockAssets::default();
         let scene = assets.scene(&surfaces, &Registry::default(), None);
         let LockBackground::Image(background) = &scene.config.background else {
-            panic!("background should stay an image: {:?}", scene.config.background);
+            panic!(
+                "background should stay an image: {:?}",
+                scene.config.background
+            );
         };
         assert!(background.starts_with(ASSET_SRC_PREFIX));
         assert_eq!(scene.slots[0].id, "plugin:dev.a.greeting/hello");

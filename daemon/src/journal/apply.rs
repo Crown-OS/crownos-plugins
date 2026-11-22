@@ -74,7 +74,10 @@ pub fn apply(
     let mut others = Vec::new();
     for change in changes {
         match change.section() {
-            Some(section) => by_section.entry(section.to_owned()).or_default().push(change),
+            Some(section) => by_section
+                .entry(section.to_owned())
+                .or_default()
+                .push(change),
             None => others.push(change),
         }
     }
@@ -102,12 +105,21 @@ fn perform(
     change: &Change,
 ) -> Result<(), PatchError> {
     match change {
-        Change::Set { section, key, value } => {
+        Change::Set {
+            section,
+            key,
+            value,
+        } => {
             let before = fields.get_ron(key)?;
             fields.set_ron(key, value)?;
             let after = fields.get_ron(key)?;
             let existing = journal.ops.iter_mut().find_map(|op| match op {
-                Op::Set { section: s, key: k, after: a, .. } if s == section && k == key => Some(a),
+                Op::Set {
+                    section: s,
+                    key: k,
+                    after: a,
+                    ..
+                } if s == section && k == key => Some(a),
                 _ => None,
             });
             match existing {
@@ -120,7 +132,12 @@ fn perform(
                 }),
             }
         }
-        Change::MapSet { section, key, entry, value } => {
+        Change::MapSet {
+            section,
+            key,
+            entry,
+            value,
+        } => {
             let mut map = raw::parse_map(&fields.get_ron(key)?).map_err(patch_error)?;
             let before = map.get(entry).map(|value| value.get_ron().to_owned());
             map.insert(entry.clone(), raw::raw(value).map_err(patch_error)?);
@@ -131,11 +148,13 @@ fn perform(
                 .map(|value| value.get_ron().to_owned())
                 .unwrap_or_default();
             let existing = journal.ops.iter_mut().find_map(|op| match op {
-                Op::MapSet { section: s, key: k, entry: e, after: a, .. }
-                    if s == section && k == key && e == entry =>
-                {
-                    Some(a)
-                }
+                Op::MapSet {
+                    section: s,
+                    key: k,
+                    entry: e,
+                    after: a,
+                    ..
+                } if s == section && k == key && e == entry => Some(a),
                 _ => None,
             });
             match existing {
@@ -149,7 +168,12 @@ fn perform(
                 }),
             }
         }
-        Change::Insert { section, key, item, after } => {
+        Change::Insert {
+            section,
+            key,
+            item,
+            after,
+        } => {
             let mut items = raw::parse_list(&fields.get_ron(key)?).map_err(patch_error)?;
             if raw::position(&items, item).is_some() {
                 return Ok(());
@@ -166,7 +190,12 @@ fn perform(
                 item: item.clone(),
             });
         }
-        Change::Replace { section, key, old, new } => {
+        Change::Replace {
+            section,
+            key,
+            old,
+            new,
+        } => {
             let mut items = raw::parse_list(&fields.get_ron(key)?).map_err(patch_error)?;
             let Some(index) = raw::position(&items, old) else {
                 return Ok(());
@@ -194,7 +223,11 @@ fn perform_file(
         Change::File { path, contents } => {
             let hash = fnv1a(&contents);
             let recorded = journal.ops.iter_mut().find_map(|op| match op {
-                Op::File { path: recorded, hash, .. } if *recorded == path => Some(hash),
+                Op::File {
+                    path: recorded,
+                    hash,
+                    ..
+                } if *recorded == path => Some(hash),
                 _ => None,
             });
             match recorded {
@@ -204,7 +237,11 @@ fn perform_file(
                         .exists()
                         .then(|| backup_existing(&journal.entity, &path))
                         .transpose()?;
-                    journal.ops.push(Op::File { path: path.clone(), backup, hash });
+                    journal.ops.push(Op::File {
+                        path: path.clone(),
+                        backup,
+                        hash,
+                    });
                 }
             }
             journal.save()?;
@@ -218,7 +255,10 @@ fn perform_file(
                 }
                 return Err(anyhow!("{} already exists", path.display()));
             }
-            journal.ops.push(Op::Link { path: path.clone(), target: target.clone() });
+            journal.ops.push(Op::Link {
+                path: path.clone(),
+                target: target.clone(),
+            });
             journal.save()?;
             if let Some(parent) = path.parent() {
                 std::fs::create_dir_all(parent)?;
@@ -237,8 +277,11 @@ fn perform_file(
 }
 
 fn backup_existing(entity: &str, path: &std::path::Path) -> Result<PathBuf> {
-    let backup = Journal::backup_dir(entity)
-        .join(path.to_string_lossy().trim_start_matches('/').replace('/', "%"));
+    let backup = Journal::backup_dir(entity).join(
+        path.to_string_lossy()
+            .trim_start_matches('/')
+            .replace('/', "%"),
+    );
     if let Some(parent) = backup.parent() {
         std::fs::create_dir_all(parent)?;
     }
