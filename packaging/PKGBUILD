@@ -1,0 +1,44 @@
+# Maintainer: marvelxcodes <ramakrishnan0046@gmail.com>
+#
+# Builds the checkout this file lives in, so run makepkg from packaging/ with
+# the sibling path dependencies checked out next to the repository, as
+# .github/workflows/release.yml does: ../crownos-config, ../crownos-ipc,
+# ../crownos-protocols, ../crownpositor and ../crownui (plus whatever those
+# path-depend on).
+
+pkgname=crownos-plugins
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="CrownOS themes and plugins: the crownplugind daemon and the crownplugin CLI"
+arch=(x86_64)
+url="https://github.com/Crown-OS/crownos-plugins"
+license=('MIT OR Apache-2.0')
+depends=(
+  glibc gcc-libs wayland libxkbcommon vulkan-icd-loader fontconfig freetype2
+  polkit systemd
+)
+makedepends=(cargo clang)
+options=(!lto !debug)
+
+_workspace="$startdir/.."
+
+prepare() {
+  cd "$_workspace"
+  cargo fetch --locked --target "$(rustc -vV | sed -n 's/^host: //p')"
+}
+
+build() {
+  cd "$_workspace"
+  export CARGO_TARGET_DIR="$srcdir/target"
+  cargo build --release --frozen -p crownplugind -p crownplugin -p crownplugin-sysassets
+}
+
+package() {
+  cd "$_workspace"
+  install -Dm755 "$srcdir"/target/release/{crownplugind,crownplugin} -t "$pkgdir/usr/bin"
+  install -Dm755 "$srcdir/target/release/crownplugin-sysassets" -t "$pkgdir/usr/lib/crownos"
+  install -Dm644 data/crownplugind.{service,socket} -t "$pkgdir/usr/lib/systemd/user"
+  install -Dm644 data/org.crownos.plugins.sysassets.policy -t "$pkgdir/usr/share/polkit-1/actions"
+  install -d "$pkgdir"/usr/share/crownos/{themes,plugins,theme-assets}
+  install -Dm644 LICENSE-{MIT,APACHE} -t "$pkgdir/usr/share/licenses/$pkgname"
+}
