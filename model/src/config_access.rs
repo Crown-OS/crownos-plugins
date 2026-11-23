@@ -14,7 +14,7 @@ pub enum ConfigAccess {
 pub fn config_access(section: &str, key: &str) -> ConfigAccess {
     match (section, key) {
         ("appearance" | "theme" | "bar" | "lock", _) => ConfigAccess::Visual,
-        ("plugins", _) => ConfigAccess::Forbidden,
+        ("plugins" | "agents" | "context_access" | "visual_context", _) => ConfigAccess::Forbidden,
         ("keybinds", _) => ConfigAccess::Needs(Capability::Keybinds),
         ("power", _) => ConfigAccess::Needs(Capability::PowerConfig),
         ("display", _) => ConfigAccess::Needs(Capability::DisplayConfig),
@@ -51,5 +51,21 @@ mod tests {
             })
         );
         assert_eq!(config_access("nope", "x"), ConfigAccess::Forbidden);
+    }
+
+    #[test]
+    fn who_may_see_the_screen_is_never_plugin_writable() {
+        for (section, key) in [
+            ("agents", "trusted_executables"),
+            ("context_access", "grants"),
+            ("context_access", "denied"),
+            ("visual_context", "excluded_apps"),
+        ] {
+            assert_eq!(
+                config_access(section, key),
+                ConfigAccess::Forbidden,
+                "{section}.{key}"
+            );
+        }
     }
 }
