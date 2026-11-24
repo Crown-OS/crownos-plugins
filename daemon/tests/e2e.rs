@@ -159,7 +159,11 @@ fn a_theme_applies_and_the_stock_look_comes_back() {
     assert!(lock.contains("dim: 0.35"), "{lock}");
 
     call!(daemon, set_theme(None)).expect("deactivates");
-    assert!(daemon.config("appearance").contains("border_radius: 8"));
+    let appearance = daemon.config("appearance");
+    assert!(
+        !appearance.contains("border_radius"),
+        "the key follows the default again: {appearance}"
+    );
     assert!(!daemon.config("theme").contains("#0b0d12"));
     let listed = call!(daemon, list()).expect("lists");
     assert!(
