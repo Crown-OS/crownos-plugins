@@ -159,7 +159,7 @@ fn a_theme_applies_and_the_stock_look_comes_back() {
     assert!(lock.contains("dim: 0.35"), "{lock}");
 
     call!(daemon, set_theme(None)).expect("deactivates");
-    let appearance = daemon.config("appearance");
+    let appearance = active_lines(&daemon.config("appearance"));
     assert!(
         !appearance.contains("border_radius"),
         "the key follows the default again: {appearance}"
@@ -236,4 +236,13 @@ fn launcher_tiles_and_search_answers_reach_the_launcher() {
             .tiles
             .is_empty()
     );
+}
+
+/// The lines of a settings file that are not comments: the file also lists
+/// each default as a `//` line.
+fn active_lines(text: &str) -> String {
+    text.lines()
+        .filter(|line| !line.trim_start().starts_with("//"))
+        .collect::<Vec<_>>()
+        .join("\n")
 }
